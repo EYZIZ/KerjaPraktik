@@ -70,11 +70,11 @@
                 {{-- Tombol --}}
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{{ route('lapangan.index') }}" class="btn btn-secondary px-4">
-                        Kembali
+                        Cancel
                     </a>
 
                     <button type="submit" class="btn btn-primary px-4">
-                        Simpan
+                        Create
                     </button>
                 </div>
 

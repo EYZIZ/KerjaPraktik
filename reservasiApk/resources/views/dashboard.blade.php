@@ -4,24 +4,83 @@
 
 @section('content')
     <style>
-        /* HERO full-bleed */
+        /* ================= HERO ================= */
         .hero-luxury {
-            position: relative;
             width: 100vw;
             margin-left: calc(50% - 50vw);
             margin-right: calc(50% - 50vw);
-            margin-top: 0;
+            height: 280px;              /* tinggi hero, bisa diubah 260–320 */
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.75);
+        }
+
+        /* Gradasi hitam dari bawah supaya teks kebaca */
+        .hero-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to top,
+                rgba(0, 0, 0, 0.85),
+                rgba(0, 0, 0, 0.0) 65%
+            );
+            pointer-events: none;
+        }
+
+        /* Teks hero */
+        .hero-text {
+            position: absolute;
+            left: 0;
+            bottom: 40px;              /* NAIK / TURUNKAN TEKS DI SINI (mobile) */
+            padding: 1.5rem 1.5rem;
+            text-align: left;
         }
 
         @media (min-width: 768px) {
-            .hero-luxury {
-                margin-top: -1rem;
+            .hero-text {
+                bottom: 60px;          /* versi desktop sedikit lebih naik */
+                padding: 2rem 3rem;
             }
+        }
+
+        .hero-small {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9);
+        }
+
+        .hero-title {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 2.4rem;
+            text-shadow: 0px 3px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 3.2rem;
+            }
+        }
+
+        .hero-address {
+            color: #ffffff;
+            font-size: 0.9rem;
+            text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9);
         }
 
         /* ===== CAROUSEL DOT CUSTOM ===== */
         #lapanganCarousel .carousel-indicators {
-            position: static;          /* pindah ke bawah card */
+            position: static;
             margin-top: 16px;
             margin-bottom: 0;
             display: flex;
@@ -33,40 +92,89 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background-color: #ffffff;  /* default putih */
-            border: 2px solid #0d6efd;  /* outline biru */
+            background-color: #ffffff;
+            border: 2px solid #0d6efd;
             opacity: 1;
         }
 
         #lapanganCarousel .carousel-indicators .active {
-            background-color: #0d6efd;  /* slide aktif biru */
+            background-color: #0d6efd;
         }
     </style>
 
     <div class="bg-light min-vh-100">
-        {{-- HERO FULL WIDTH TANPA JARAK KIRI/KANAN/ATAS --}}
-        <div class="hero-luxury overflow-hidden" style="min-height: 220px;">
-            <img src="{{ url('assets/images/BACKGROUND.png') }}"
-                 alt="Luxury Padel Background"
-                 class="w-100 d-block"
-                 style="object-fit: cover; filter: brightness(0.6);">
+        {{-- HERO FULL WIDTH --}}
+        <div class="hero-luxury">
+            <img src="{{ url('assets/images/luxurybackground.png') }}"
+                 class="hero-bg"
+                 alt="Luxury Padel Background">
 
-            <div class="position-absolute top-0 start-0 w-100 h-100"
-                 style="background: linear-gradient(90deg, rgba(0,0,0,0.65), rgba(0,0,0,0.15));">
-            </div>
+            <div class="hero-gradient"></div>
 
-            <div class="position-absolute top-50 start-0 translate-middle-y ps-4 ps-md-5 pe-4 text-start">
-                <p class="text-white mb-1 fw-bold small text-uppercase">
-                    BOOK A COURT NOW AT
-                </p>
-
-                <h1 class="text-white fw-bold lh-1 mb-2" style="font-size: 3rem;">
-                    LUXURY PADEL
-                </h1>
-
-                <p class="text-white mb-0 small">
+            <div class="hero-text">
+                <p class="hero-small mb-1">BOOK A COURT NOW AT</p>
+                <h1 class="hero-title mb-2">LUXURY PADEL</h1>
+                <p class="hero-address mb-0">
                     Jl. Soekarno Hatta No.824, Talang Kelapa, Kec. Alang-Alang Lebar
                 </p>
+            </div>
+        </div>
+
+        {{-- WELCOME & ABOUT CARD SECTION --}}
+        <div class="container py-5">
+            <div class="row justify-content-center">
+
+                <div class="col-lg-8">
+                    <div class="card shadow-lg border-0"
+                        style="border-radius:20px; overflow:hidden; background:#fff;">
+
+                        {{-- HEADER GOLD --}}
+                        <div style="
+                            background: linear-gradient(135deg, #d4af37, #f9e79f, #d4af37);
+                            padding: 20px;
+                            text-align:center;
+                        ">
+                            <h3 class="fw-bold mb-0"
+                                style="color:#3b3b3b; font-size:1.5rem; white-space: nowrap;">
+                                Welcome to Luxury Padel
+                            </h3>
+                        </div>
+
+                        {{-- BODY CONTENT --}}
+                        <div class="card-body p-4 p-md-5 text-center">
+
+                            <p class="mb-4" style="font-size:1.1rem; color:#555;">
+                                Experience a new standard of padel excellence —
+                                where sport, lifestyle, and comfort blend into a world–class environment.
+                            </p>
+
+                            <h4 class="fw-bold mb-3" style="color:#3b3b3b;">About Us</h4>
+
+                            <p style="font-size:1rem; color:#666;">
+                                Luxury Padel offers premium courts, modern facilities, and
+                                a relaxing atmosphere designed for players of all levels.
+                                Whether you're here to compete, train, or simply enjoy the game,
+                                we deliver an exclusive experience with high–quality amenities and
+                                professional service to elevate your play.
+                            </p>
+
+                            {{-- OPTIONAL BUTTON --}}
+                            <a href="{{ url('kontak') }}"
+                            class="btn mt-3 px-4 py-2 fw-semibold"
+                            style="
+                                    background: linear-gradient(135deg, #d4af37, #f8e287);
+                                    border:none;
+                                    color:#2d2d2d;
+                                    border-radius:30px;
+                            ">
+                                Learn More
+                            </a>
+
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -78,7 +186,6 @@
                 @if($lapangans->count())
                     <div id="lapanganCarousel" class="carousel slide" data-bs-ride="carousel">
 
-                        {{-- SLIDE LAPANGAN --}}
                         <div class="carousel-inner">
                             @foreach($lapangans as $lapangan)
                                 <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
@@ -111,7 +218,7 @@
                                             @endif
 
                                             <a href="{{ route('reservasi.create', ['lapangan_id' => $lapangan->id]) }}"
-                                            class="btn btn-primary px-4 py-2 rounded-pill fw-semibold">
+                                               class="btn btn-primary px-4 py-2 rounded-pill fw-semibold">
                                                 Book Now
                                             </a>
                                         </div>
@@ -120,7 +227,7 @@
                             @endforeach
                         </div>
 
-                        {{-- DOT INDICATOR (HANYA SEKALI, DI LUAR .carousel-inner) --}}
+                        {{-- DOT INDICATOR --}}
                         <div class="carousel-indicators">
                             @foreach($lapangans as $item)
                                 <button type="button"
@@ -154,7 +261,6 @@
         {{-- SECTION MAP --}}
         <div class="container py-4">
             <div class="row g-4">
-                {{-- MAP --}}
                 <div class="col-12 col-lg-8">
                     <div class="card border-0 shadow-sm rounded-3">
                         <div class="card-header bg-white border-0">

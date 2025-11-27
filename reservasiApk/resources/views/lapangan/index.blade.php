@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold mb-0">Daftar Lapangan Padel</h3>
         <a href="{{ route('lapangan.create') }}" class="btn btn-success">
-            Tambah Lapangan
+            Create Court
         </a>
     </div>
 
@@ -33,13 +33,13 @@
                                  style="height: 220px; object-fit: cover;">
                         @endif
 
-                        {{-- Badge Status di atas foto --}}
+                        {{-- Badge Status --}}
                         <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2
-                            @if($lapangan->status == 'aktif') bg-success
+                            @if($lapangan->status == 'Tersedia') bg-success
                             @elseif($lapangan->status == 'Terisi') bg-warning text-dark
                             @else bg-secondary @endif"
                             style="border-radius: 999px; font-size: 0.8rem;">
-                            {{ ucfirst($lapangan->status) }}
+                            {{ $lapangan->status }}
                         </span>
                     </div>
 
@@ -65,6 +65,12 @@
                     <div class="card-footer bg-white border-0 d-flex justify-content-between pt-0 pb-3 px-3">
                         <a href="{{ route('lapangan.edit', $lapangan->id) }}" class="btn btn-sm btn-warning">
                             Edit
+                        </a>
+
+                        {{-- Tombol buat reservasi lapangan ini --}}
+                        <a href="{{ route('reservasi.create', ['lapangan_id' => $lapangan->id]) }}"
+                           class="btn btn-sm btn-primary">
+                            Reservasi
                         </a>
                     </div>
                 </div>

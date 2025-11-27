@@ -23,7 +23,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('lapangan.update', $lapangan->id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('lapangan.update', ['id' => $lapangan->id]) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -81,7 +81,7 @@
                 {{-- Tombol --}}
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{{ route('lapangan.index') }}" class="btn btn-secondary px-4">
-                        Kembali
+                        Cancel
                     </a>
 
                     <button type="submit" class="btn btn-primary px-4">

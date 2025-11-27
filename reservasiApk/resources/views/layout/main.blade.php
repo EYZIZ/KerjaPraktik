@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html class="no-js" lang="zxx">
 
@@ -8,7 +7,7 @@
     <title>@yield('title')</title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="shortcut icon" type="image/x-icon" href="{{ url('assets/images/LOGO.png') }}" />
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url('assets/images/luxurylogo.png') }}" />
 
     <!-- ========================= CSS here ========================= -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap.min.css') }}" />
@@ -18,53 +17,76 @@
     <link rel="stylesheet" href="{{ url('assets/css/glightbox.min.css') }}" />
     <link rel="stylesheet" href="{{ url('assets/css/main.css') }}" />
     <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-<style>
-    /* Header fixed + putih (punyamu yang sekarang, biarkan) */
-    .header.navbar-area {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 9999;
-        background: #837979 !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
+    <style>
+        /* ================= HEADER / NAVBAR ================= */
+        .header.navbar-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 9999;
+            /* GRADIENT EMAS – KUNING */
+            background: linear-gradient(
+                90deg,
+                #8d6e32,   /* bronze gold */
+                #d4af37,   /* gold */
+                #ffdd44    /* yellow gold */
+            ) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
 
-    .header.navbar-area.sticky {
-        background: #ffffff !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
+        /* Saat sticky tetap pakai gradient yang sama */
+        .header.navbar-area.sticky {
+            background: linear-gradient(
+                90deg,
+                #8d6e32,
+                #d4af37,
+                #ffdd44
+            ) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
 
-    .header.navbar-area .navbar-nav .nav-item a {
-        color: #000 !important;
-        font-weight: 600;
-    }
+        /* Warna menu nav */
+        .header.navbar-area .navbar-nav .nav-item a {
+            color: #000 !important;
+            font-weight: 600;
+        }
 
-    .header.navbar-area .btn {
-        background: #ff8401 !important;
-        color: #fff !important;
-        font-weight: 600;
-        border-radius: 3px;
-        border: none !important;
-    }
+        .header.navbar-area .navbar-nav .nav-item a:hover {
+            color: #333 !important;
+        }
 
-    .navbar-brand img {
-        object-fit: cover;
-        width: 65px;
-        height: 75px;
-    }
+        /* Tombol Login */
+        .header.navbar-area .btn {
+            background: #1f2933 !important; /* gelap biar kontras dengan gold */
+            color: #fff !important;
+            font-weight: 600;
+            border-radius: 3px;
+            border: none !important;
+        }
 
-    .hero-area {
-        background: #ffffff !important;
-        padding-top: 120px;
-    }
+        .header.navbar-area .btn:hover {
+            opacity: 0.9;
+        }
 
-    body {
-        background: #ffffff;
-    }
-</style>
+        .navbar-brand img {
+            object-fit: cover;
+            width: 65px;
+            height: 75px;
+        }
+
+        /* Hero digeser ke bawah karena header fixed */
+        .hero-area {
+            background: #ffffff !important;
+            padding-top: 120px;
+        }
+
+        body {
+            background: #ffffff;
+        }
+    </style>
 
 </head>
 
@@ -78,16 +100,18 @@
                         <!-- Start Navbar -->
                         <nav class="navbar navbar-expand-lg">
                             <a class="navbar-brand" href="/">
-                                {{-- logo putih (awal) --}}
-                                <img src="{{ url('assets/images/TPlogo.png') }}" alt="Logo" class="logo-light" height="80px">
+                                {{-- logo --}}
+                                <img src="{{ url('assets/images/luxurybackground.png') }}" alt="Logo" class="logo-light" height="80px">
                             </a>
+
                             <button class="navbar-toggler mobile-menu-btn" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                                aria-expanded="false" aria-label="Toggle navigation">
+                                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                                    aria-expanded="false" aria-label="Toggle navigation">
                                 <span class="toggler-icon"></span>
                                 <span class="toggler-icon"></span>
                                 <span class="toggler-icon"></span>
                             </button>
+
                             <div class="collapse navbar-collapse sub-menu-bar" id="navbarSupportedContent">
                                 <ul id="nav" class="navbar-nav ms-auto">
                                     <li class="nav-item">
@@ -108,6 +132,7 @@
                                     </li>
                                 </ul>
                             </div> <!-- navbar collapse -->
+
                             <div class="button add-list-button">
                                 {{-- Jika belum login --}}
                                 @guest
@@ -118,25 +143,19 @@
                                 @auth
                                     <div class="dropdown">
                                         <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                            style="
-                                                background: transparent;
-                                                border: none;
-                                                box-shadow: none;
-                                                padding: 0;
-                                                color: black;
-                                                font-weight: 600;
-                                                cursor: pointer;
-                                            ">
+                                                style="
+                                                    background: transparent;
+                                                    border: none;
+                                                    box-shadow: none;
+                                                    padding: 0;
+                                                    color: #000;
+                                                    font-weight: 600;
+                                                    cursor: pointer;
+                                                ">
                                             {{ Auth::user()->name }}
                                         </button>
 
                                         <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                                                    Profil
-                                                </a>
-                                            </li>
-
                                             <li>
                                                 <form action="{{ route('logout') }}" method="POST">
                                                     @csrf

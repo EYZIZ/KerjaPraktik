@@ -52,8 +52,9 @@ class LapanganController extends Controller
     }
 
     // Form edit lapangan
-    public function edit(Lapangan $lapangan)
+    public function edit($id)
     {
+        $lapangan = Lapangan::findOrFail($id);
         return view('lapangan.edit', compact('lapangan'));
     }
 
@@ -64,7 +65,7 @@ class LapanganController extends Controller
             'location'       => 'required|string|max:255',
             'description'    => 'nullable|string',
             'price_per_hour' => 'required|integer|min:0',
-            'status'         => 'required|in:aktif,nonaktif,Terisi',
+            'status'         => 'required|in:Tersedia,Perbaikan,Terisi',
             'photo'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
