@@ -3,11 +3,33 @@
 @section('title', 'Data Lapangan')
 
 @section('content')
+
+<style>
+    .btn-create-court {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    @media (min-width: 768px) {
+        .btn-create-court {
+            width: auto;
+            max-width: none;
+            min-width: 180px;
+        }
+    }
+</style>
+
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0">Daftar Lapangan Padel</h3>
-        <a href="{{ route('lapangan.create') }}" class="btn btn-success">
+    {{-- HEADER SECTION --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between
+                align-items-start align-items-md-center gap-2 mb-4">
+        <h3 class="fw-bold mb-0 text-center text-md-start">
+            Daftar Lapangan Padel
+        </h3>
+
+        <a href="{{ route('lapangan.create') }}"
+           class="btn btn-success btn-create-court d-block d-md-inline-block text-center">
             Create Court
         </a>
     </div>
