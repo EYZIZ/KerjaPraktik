@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CoachController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\DashboardController;
@@ -80,5 +81,7 @@ Route::post('/payment/midtrans/callback', [ReservasiController::class, 'callback
 Route::get('/kontak', function () {
     return view('kontak');
 })->name('kontak');
+
+Route::resource('coach', CoachController::class);
 
 require __DIR__.'/auth.php';

@@ -54,4 +54,8 @@ class Reservasi extends Model
     {
         return $this->belongsTo(Lapangan::class);
     }
+    public function coach()
+    {
+        return $this->belongsTo(Coach::class, 'coach_id');
+    }
 }

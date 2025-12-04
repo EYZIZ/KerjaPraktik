@@ -8,7 +8,7 @@
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel="shortcut icon" type="image/x-icon" href="{{ url('assets/images/luxurylogo.png') }}" />
+    <link rel="icon" type="image/png"  href="{{ url('assets/images/luxurylogo.png') }}">
 
     <!-- ========================= CSS here ========================= -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap.min.css') }}" />
@@ -159,7 +159,7 @@
                                     </li>
 
                                     <li class="nav-item">
-                                        <a href="{{ url('lapangan') }}">Coach</a>
+                                        <a href="{{ url('coach') }}">Coach</a>
                                     </li>
 
                                     <li class="nav-item">

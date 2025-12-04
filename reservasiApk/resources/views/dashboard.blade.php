@@ -9,7 +9,7 @@
             width: 100vw;
             margin-left: calc(50% - 50vw);
             margin-right: calc(50% - 50vw);
-            height: 280px;
+            height: 400px;
             position: relative;
             overflow: hidden;
         }

@@ -1,6 +1,6 @@
 @extends('layout.main')
 
-@section('title', 'Data Lapangan')
+@section('title', 'Lapangan')
 
 @section('content')
 

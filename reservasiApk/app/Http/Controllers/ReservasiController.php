@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservasi;
 use App\Models\Lapangan;
+use App\Models\Coach; // <-- TAMBAH INI
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -27,7 +28,7 @@ class ReservasiController extends Controller
      */
     public function index()
     {
-        $reservasis = Reservasi::with('lapangan')
+        $reservasis = Reservasi::with(['lapangan', 'coach']) // <-- load coach juga
             ->where('user_id', Auth::id())
             ->orderByDesc('tanggal')
             ->orderByDesc('jam_mulai')
@@ -38,18 +39,32 @@ class ReservasiController extends Controller
 
     /**
      * Form buat reservasi.
-     * Bisa pre-select lapangan: /reservasi/create?lapangan_id=...
+     * Bisa pre-select lapangan / coach:
+     *  - /reservasi/create?lapangan_id=...
+     *  - /reservasi/create?coach_id=...
      */
     public function create(Request $request)
     {
         $lapangans = Lapangan::where('status', 'Tersedia')->get();
+        $coaches   = Coach::all(); // <-- list coach
+
         $lapanganTerpilih = null;
+        $coachTerpilih    = null;
 
         if ($request->has('lapangan_id')) {
             $lapanganTerpilih = Lapangan::find($request->lapangan_id);
         }
 
-        return view('reservasi.create', compact('lapangans', 'lapanganTerpilih'));
+        if ($request->has('coach_id')) {
+            $coachTerpilih = Coach::find($request->coach_id);
+        }
+
+        return view('reservasi.create', compact(
+            'lapangans',
+            'lapanganTerpilih',
+            'coaches',
+            'coachTerpilih'
+        ));
     }
 
     /**
@@ -59,12 +74,14 @@ class ReservasiController extends Controller
     {
         $request->validate([
             'lapangan_id' => 'required|exists:lapangans,id',
+            'coach_id'    => 'nullable|exists:coaches,id', // <-- coach optional
             'tanggal'     => 'required|date|after_or_equal:today',
             'jam_mulai'   => 'required',
             'durasi'      => 'required|integer|in:1,2,3',
         ]);
 
         $lapangan = Lapangan::findOrFail($request->lapangan_id);
+        $coachId  = $request->coach_id ?: null;
 
         // Pastikan durasi berupa integer
         $durasi = (int) $request->input('durasi');
@@ -76,31 +93,48 @@ class ReservasiController extends Controller
         $jamMulai   = $start->format('H:i');
         $jamSelesai = $end->format('H:i');
 
-        // Hitung total harga
+        // Hitung total harga (sementara hanya dari lapangan)
         $totalHarga = $durasi * $lapangan->price_per_hour;
 
-        // Cek bentrok jadwal (lapangan & tanggal yang sama)
-        $bentrok = Reservasi::where('lapangan_id', $lapangan->id)
+        // Cek bentrok jadwal LAPANGAN (lapangan & tanggal yang sama)
+        $bentrokLapangan = Reservasi::where('lapangan_id', $lapangan->id)
             ->where('tanggal', $request->tanggal)
             ->where(function ($q) use ($jamMulai, $jamSelesai) {
-                // existing.jam_mulai < new_jam_selesai
-                // AND existing.jam_selesai > new_jam_mulai
                 $q->where('jam_mulai', '<', $jamSelesai)
-                ->where('jam_selesai', '>', $jamMulai);
+                  ->where('jam_selesai', '>', $jamMulai);
             })
             ->whereIn('status', ['pending', 'disetujui'])
             ->exists();
 
-        if ($bentrok) {
+        if ($bentrokLapangan) {
             return back()
                 ->withErrors(['tanggal' => 'Jadwal di lapangan ini sudah terisi. Silakan pilih jam atau durasi lain.'])
                 ->withInput();
+        }
+
+        // Jika coach dipilih, cek bentrok jadwal COACH juga
+        if ($coachId) {
+            $bentrokCoach = Reservasi::where('coach_id', $coachId)
+                ->where('tanggal', $request->tanggal)
+                ->where(function ($q) use ($jamMulai, $jamSelesai) {
+                    $q->where('jam_mulai', '<', $jamSelesai)
+                      ->where('jam_selesai', '>', $jamMulai);
+                })
+                ->whereIn('status', ['pending', 'disetujui'])
+                ->exists();
+
+            if ($bentrokCoach) {
+                return back()
+                    ->withErrors(['coach_id' => 'Coach ini sudah memiliki jadwal di jam tersebut. Silakan pilih jam atau coach lain.'])
+                    ->withInput();
+            }
         }
 
         // 1. Buat reservasi dulu dengan status pending & unpaid
         $reservasi = Reservasi::create([
             'user_id'                => Auth::id(),
             'lapangan_id'            => $lapangan->id,
+            'coach_id'               => $coachId, // <-- simpan coach
             'tanggal'                => $request->tanggal,
             'jam_mulai'              => $jamMulai,
             'durasi'                 => $durasi,
@@ -116,6 +150,12 @@ class ReservasiController extends Controller
         // 2. Siapkan parameter untuk Midtrans Snap
         $orderId = $reservasi->id; // pakai UUID reservasi sebagai order_id
 
+        // Tambah info coach di nama item kalau ada
+        $itemName = 'Sewa Lapangan Padel - ' . ($lapangan->location ?? 'Lapangan');
+        if ($coachId && $reservasi->coach) {
+            $itemName .= ' (dengan Coach ' . $reservasi->coach->name . ')';
+        }
+
         $params = [
             'transaction_details' => [
                 'order_id'     => $orderId,
@@ -130,7 +170,7 @@ class ReservasiController extends Controller
                     'id'       => $lapangan->id,
                     'price'    => $lapangan->price_per_hour,
                     'quantity' => $durasi, // pakai integer durasi
-                    'name'     => 'Sewa Lapangan Padel - ' . ($lapangan->location ?? 'Lapangan'),
+                    'name'     => $itemName,
                 ],
             ],
         ];
@@ -149,7 +189,6 @@ class ReservasiController extends Controller
             'snapToken' => $snapToken,
         ]);
     }
-
 
     /**
      * Callback / webhook dari Midtrans.
@@ -196,7 +235,7 @@ class ReservasiController extends Controller
     }
 
     /**
-     * (Opsional) Batalkan reservasi oleh user (kalau belum paid).
+     * Batalkan reservasi oleh user (kalau belum paid).
      */
     public function destroy(Reservasi $reservasi)
     {

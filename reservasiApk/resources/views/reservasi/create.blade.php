@@ -10,7 +10,8 @@
 
             <h3 class="fw-bold mb-3 text-primary">Buat Reservasi Lapangan</h3>
             <p class="text-muted mb-4">
-                Pilih lapangan, tanggal, dan jam bermain. Pembayaran akan diproses otomatis melalui Midtrans.
+                Pilih lapangan, tanggal, jam bermain, dan (opsional) coach pendamping.
+                Pembayaran akan diproses otomatis melalui Midtrans.
             </p>
 
             {{-- pesan flash --}}
@@ -37,14 +38,38 @@
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Pilih Lapangan</label>
                     <select name="lapangan_id" class="form-select">
-                        <option value="">-- pilih lapangan --</option>
+                        <option value="">-- Pilih lapangan --</option>
                         @foreach($lapangans as $lapangan)
                             <option value="{{ $lapangan->id }}"
-                                @if(old('lapangan_id') == $lapangan->id || (isset($lapanganTerpilih) && $lapanganTerpilih && $lapanganTerpilih->id == $lapangan->id)) selected @endif>
-                                {{ $lapangan->location ?? 'Lapangan' }} - Rp {{ number_format($lapangan->price_per_hour) }}/jam
+                                @if(
+                                    old('lapangan_id') == $lapangan->id ||
+                                    (isset($lapanganTerpilih) && $lapanganTerpilih && $lapanganTerpilih->id == $lapangan->id)
+                                   ) selected @endif>
+                                {{ $lapangan->location ?? 'Lapangan' }}
+                                - Rp {{ number_format($lapangan->price_per_hour) }}/jam
                             </option>
                         @endforeach
                     </select>
+                </div>
+
+                {{-- Coach (opsional) --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Pilih Coach</label>
+                    <select name="coach_id" class="form-select">
+                        <option value="">-- Tanpa Coach --</option>
+                        @foreach($coaches as $coach)
+                            <option value="{{ $coach->id }}"
+                                @if(
+                                    old('coach_id') == $coach->id ||
+                                    (isset($coachTerpilih) && $coachTerpilih && $coachTerpilih->id == $coach->id)
+                                   ) selected @endif>
+                                Coach - {{ $coach->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">
+                        Kosongkan jika Anda tidak ingin menggunakan coach.
+                    </small>
                 </div>
 
                 {{-- Tanggal --}}
@@ -73,8 +98,9 @@
                 </div>
 
                 <div class="alert alert-info small">
-                    Total harga akan dihitung otomatis berdasarkan harga lapangan dan durasi sewa,
-                    lalu diproses melalui pembayaran.
+                    Total harga akan dihitung otomatis berdasarkan harga lapangan
+                    dan durasi sewa, lalu diproses melalui pembayaran.
+                    {{-- kalau nanti ada biaya coach tinggal tambahkan info di sini --}}
                 </div>
 
                 {{-- Tombol --}}
