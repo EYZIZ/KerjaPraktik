@@ -63,7 +63,7 @@
                                     old('coach_id') == $coach->id ||
                                     (isset($coachTerpilih) && $coachTerpilih && $coachTerpilih->id == $coach->id)
                                    ) selected @endif>
-                                Coach - {{ $coach->name }}
+                                {{ $coach->name }} - {{ $coach->price }}
                             </option>
                         @endforeach
                     </select>
@@ -113,9 +113,7 @@
                         Payment
                     </button>
                 </div>
-
             </form>
-
         </div>
     </div>
 </div>

@@ -19,10 +19,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/lapangan', [LapanganController::class, 'index'])
-        ->name('lapangan.index');
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('/lapangan', [LapanganController::class, 'index'])
+            ->name('lapangan.index');
+
+});
+
+Route::middleware(['auth','role:admin'])->group(function () {
 
     Route::get('/lapangan/create', [LapanganController::class, 'create'])
         ->name('lapangan.create');
@@ -40,6 +45,39 @@ Route::middleware('auth')->group(function () {
     // ========== ROUTE DELETE ==========
     Route::delete('/lapangan/{id}', [LapanganController::class, 'destroy'])
         ->name('lapangan.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Route Coach
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+
+    Route::get('/coach', [CoachController::class, 'index'])
+            ->name('coach.index');
+
+});
+
+Route::middleware(['auth','role:admin'])->group(function () {
+
+    // Form buat reservasi
+    Route::get('/coach/create', [CoachController::class, 'create'])
+        ->name('coach.create');
+
+    // Simpan reservasi + generate SNAP TOKEN
+    Route::post('/coach', [CoachController::class, 'store'])
+        ->name('coach.store');
+
+    Route::get('/coach/{id}/edit', [CoachController::class, 'edit'])
+        ->name('coach.edit');
+
+    Route::put('/coach/{id}', [CoachController::class, 'update'])
+        ->name('coach.update');
+
+    // Batalkan reservasi (kalau unpaid)
+    Route::delete('/coach/{reservasi}', [CoachController::class, 'destroy'])
+        ->name('coach.destroy');
 });
 
 /*
@@ -81,7 +119,5 @@ Route::post('/payment/midtrans/callback', [ReservasiController::class, 'callback
 Route::get('/kontak', function () {
     return view('kontak');
 })->name('kontak');
-
-Route::resource('coach', CoachController::class);
 
 require __DIR__.'/auth.php';

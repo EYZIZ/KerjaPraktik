@@ -38,7 +38,7 @@ class CoachController extends Controller
             'price' => 'required|integer|min:0',
         ]);
 
-        $data = $request->only(['name', 'phone']);
+        $data = $request->only(['name', 'phone', 'price']);
 
         // upload photo jika ada
         if ($request->hasFile('photo')) {
@@ -71,7 +71,7 @@ class CoachController extends Controller
             'price' => 'required|integer|min:0',
         ]);
 
-        $data = $request->only(['name', 'phone']);
+        $data = $request->only(['name', 'phone', 'price']);
 
         // jika ada foto baru → hapus lama → simpan baru
         if ($request->hasFile('photo')) {

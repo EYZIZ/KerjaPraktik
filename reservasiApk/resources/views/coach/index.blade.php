@@ -26,7 +26,7 @@
     }
 
     .coach-img {
-        height: 480px;
+        height: 380px;
         width: 100%;
         object-fit: cover;
     }
@@ -62,7 +62,7 @@
     @endif
 
     {{-- LIST COACH --}}
-    <div class="row justify-content-center">
+    <div class="row">
 
         @forelse ($coaches as $coach)
             <div class="col-12 col-md-6 col-lg-4 mb-4">
@@ -89,9 +89,14 @@
 
                         <h4 class="fw-bold mb-1">{{ $coach->name }}</h4>
 
-                        <p class="text-muted mb-3">
+                        <p class="text-muted mb-1">
                             Nomor WhatsApp:
                             <span class="fw-semibold">{{ $coach->phone ?? '-' }}</span>
+                        </p>
+
+                        {{-- PRICE --}}
+                        <p class="fw-bold text-primary mb-3">
+                            Rp {{ number_format($coach->price) }} / sesi
                         </p>
 
                     </div>

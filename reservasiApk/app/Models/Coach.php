@@ -12,6 +12,8 @@ class Coach extends Model
 
     protected $table = 'coaches';
 
+    protected $primaryKey = 'id';
+
     public $incrementing = false;
     protected $keyType = 'string';
 

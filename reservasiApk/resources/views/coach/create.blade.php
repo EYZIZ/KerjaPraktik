@@ -3,13 +3,14 @@
 @section('title', 'Tambah Coach')
 
 @section('content')
+
 <div class="container mt-4" style="max-width: 700px;">
 
     <div class="card shadow-lg border-0" style="border-radius: 18px;">
         <div class="card-body p-4">
 
             <h3 class="fw-bold mb-3 text-primary">Tambah Coach Baru</h3>
-            <p class="text-muted mb-4">Silakan isi data berikut untuk menambahkan data coach.</p>
+            <p class="text-muted mb-4">Isi data coach dengan lengkap dan benar.</p>
 
             {{-- Validasi --}}
             @if ($errors->any())
@@ -31,10 +32,10 @@
                     <label class="form-label fw-semibold">Foto Coach</label>
                     <input type="file" name="photo" class="form-control" accept="image/*">
 
-                    <small class="text-muted">Format: jpg, jpeg, png, webp (max 2MB).</small>
+                    <small class="text-muted">Format: JPG, JPEG, PNG, WEBP (max 2MB).</small>
                 </div>
 
-                {{-- Nama --}}
+                {{-- Nama Coach --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Nama Coach</label>
                     <input type="text"
@@ -45,7 +46,7 @@
                            required>
                 </div>
 
-                {{-- Nomor Telepon --}}
+                {{-- Nomor WhatsApp --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Nomor WhatsApp</label>
                     <input type="text"
@@ -53,6 +54,19 @@
                            class="form-control"
                            value="{{ old('phone') }}"
                            placeholder="Contoh: +62 812-3456-7890">
+                </div>
+
+                {{-- Harga Coach --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Harga per Sesi</label>
+                    <input type="number"
+                           name="price"
+                           class="form-control"
+                           value="{{ old('price') }}"
+                           placeholder="Contoh: 100000"
+                           required>
+
+                    <small class="text-muted">Harga layanan coach (per sesi latihan).</small>
                 </div>
 
                 {{-- Tombol --}}
@@ -69,4 +83,5 @@
         </div>
     </div>
 </div>
+
 @endsection
