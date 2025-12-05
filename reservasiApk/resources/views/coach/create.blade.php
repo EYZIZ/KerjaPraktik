@@ -53,7 +53,7 @@
                            name="phone"
                            class="form-control"
                            value="{{ old('phone') }}"
-                           placeholder="Contoh: +62 812-3456-7890">
+                           placeholder="Contoh: +62813xxxxxxxx">
                 </div>
 
                 {{-- Harga Coach --}}

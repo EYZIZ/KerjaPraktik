@@ -219,10 +219,10 @@
         </div>
     </section>
 
-    <!-- SCROLL TOP -->
+    {{--  <!-- SCROLL TOP -->
     <a href="#" class="scroll-top">
         <i class="lni lni-chevron-up"></i>
-    </a>
+    </a>  --}}
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

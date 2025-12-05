@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reservasi;
-use App\Models\Lapangan;
-use App\Models\Coach; // <-- TAMBAH INI
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap;
+use App\Models\Lapangan;
+use App\Models\Reservasi;
 use Midtrans\Notification;
+use Illuminate\Http\Request;
+use App\Models\ReservasiSlot;
+use Illuminate\Support\Facades\Auth;
+use Midtrans\Config as MidtransConfig;
+use App\Models\Coach; // <-- TAMBAH INI
 
 class ReservasiController extends Controller
 {
@@ -46,25 +47,66 @@ class ReservasiController extends Controller
     public function create(Request $request)
     {
         $lapangans = Lapangan::where('status', 'Tersedia')->get();
-        $coaches   = Coach::all(); // <-- list coach
+        $coaches   = Coach::all();
 
+        // --- pilih lapangan seperti sebelumnya ---
         $lapanganTerpilih = null;
-        $coachTerpilih    = null;
-
         if ($request->has('lapangan_id')) {
             $lapanganTerpilih = Lapangan::find($request->lapangan_id);
+        } else {
+            $lapanganTerpilih = $lapangans->first();
         }
 
-        if ($request->has('coach_id')) {
-            $coachTerpilih = Coach::find($request->coach_id);
+        // kalau tetap tidak ada lapangan
+        if (! $lapanganTerpilih) {
+            return view('reservasi.create', [
+                'lapangans'        => $lapangans,
+                'lapanganTerpilih' => null,
+                'coaches'          => $coaches,
+                'coachTerpilih'    => null,
+                'tanggal'          => null,
+                'dateTabs'         => [],
+                'bookedSlots'      => [],
+            ]);
         }
 
-        return view('reservasi.create', compact(
-            'lapangans',
-            'lapanganTerpilih',
-            'coaches',
-            'coachTerpilih'
-        ));
+        // --- tanggal aktif (dari query ?tanggal=..., default hari ini) ---
+        $tanggalAktif = $request->get('tanggal', Carbon::today()->toDateString());
+        $tanggalAktif = Carbon::parse($tanggalAktif)->startOfDay();
+
+        // ==== GENERATE 1 BULAN PENUH ====
+        $firstOfMonth = $tanggalAktif->copy()->startOfMonth();
+        $lastOfMonth  = $tanggalAktif->copy()->endOfMonth();
+
+        $dateTabs = [];
+        $current = $firstOfMonth->copy();
+
+        while ($current->lte($lastOfMonth)) {
+            $dateTabs[] = [
+                'value'    => $current->toDateString(),
+                'dayName'  => $current->format('D'),              // Fri
+                'dayNum'   => $current->format('d'),              // 05
+                'month'    => strtoupper($current->format('M')),  // DEC
+                'isActive' => $current->isSameDay($tanggalAktif),
+            ];
+            $current->addDay();
+        }
+
+        // ==== cari slot yang sudah dibooking untuk lapangan + tanggal ini ====
+        $bookedSlots = Reservasi::where('lapangan_id', $lapanganTerpilih->id)
+            ->where('tanggal', $tanggalAktif->toDateString())
+            ->pluck('jam_mulai')
+            ->toArray();
+
+        return view('reservasi.create', [
+            'lapangans'        => $lapangans,
+            'lapanganTerpilih' => $lapanganTerpilih,
+            'coaches'          => $coaches,
+            'coachTerpilih'    => null,
+            'tanggal'          => $tanggalAktif->toDateString(),
+            'dateTabs'         => $dateTabs,
+            'bookedSlots'      => $bookedSlots,
+        ]);
     }
 
     /**
@@ -74,70 +116,84 @@ class ReservasiController extends Controller
     {
         $request->validate([
             'lapangan_id' => 'required|exists:lapangans,id',
-            'coach_id'    => 'nullable|exists:coaches,id', // <-- coach optional
+            'coach_id'    => 'nullable|exists:coaches,id',
             'tanggal'     => 'required|date|after_or_equal:today',
-            'jam_mulai'   => 'required',
-            'durasi'      => 'required|integer|in:1,2,3',
+            'slots'       => 'required|array|min:1',   // array slot "07:00-08:00"
         ]);
 
         $lapangan = Lapangan::findOrFail($request->lapangan_id);
         $coachId  = $request->coach_id ?: null;
+        $tanggal  = $request->tanggal;
 
-        // Pastikan durasi berupa integer
-        $durasi = (int) $request->input('durasi');
-
-        // Hitung jam selesai dari jam_mulai + durasi
-        $start = Carbon::createFromFormat('H:i', $request->jam_mulai);
-        $end   = $start->copy()->addHours($durasi);
-
-        $jamMulai   = $start->format('H:i');
-        $jamSelesai = $end->format('H:i');
-
-        // Hitung total harga (sementara hanya dari lapangan)
-        $totalHarga = $durasi * $lapangan->price_per_hour;
-
-        // Cek bentrok jadwal LAPANGAN (lapangan & tanggal yang sama)
-        $bentrokLapangan = Reservasi::where('lapangan_id', $lapangan->id)
-            ->where('tanggal', $request->tanggal)
-            ->where(function ($q) use ($jamMulai, $jamSelesai) {
-                $q->where('jam_mulai', '<', $jamSelesai)
-                  ->where('jam_selesai', '>', $jamMulai);
-            })
-            ->whereIn('status', ['pending', 'disetujui'])
-            ->exists();
-
-        if ($bentrokLapangan) {
-            return back()
-                ->withErrors(['tanggal' => 'Jadwal di lapangan ini sudah terisi. Silakan pilih jam atau durasi lain.'])
-                ->withInput();
+        // PARSE SLOT: "07:00-08:00" -> ['start' => '07:00', 'end' => '08:00']
+        $parsedSlots = [];
+        foreach ($request->slots as $raw) {
+            [$start, $end] = array_map('trim', explode('-', $raw));
+            $parsedSlots[] = [
+                'start' => $start,
+                'end'   => $end,
+            ];
         }
 
-        // Jika coach dipilih, cek bentrok jadwal COACH juga
-        if ($coachId) {
-            $bentrokCoach = Reservasi::where('coach_id', $coachId)
-                ->where('tanggal', $request->tanggal)
-                ->where(function ($q) use ($jamMulai, $jamSelesai) {
-                    $q->where('jam_mulai', '<', $jamSelesai)
-                      ->where('jam_selesai', '>', $jamMulai);
+        // Urutkan berdasarkan jam mulai
+        usort($parsedSlots, fn ($a, $b) => strcmp($a['start'], $b['start']));
+
+        // Cek bentrok untuk tiap slot di lapangan
+        foreach ($parsedSlots as $slot) {
+            $bentrokLapangan = ReservasiSlot::where('lapangan_id', $lapangan->id)
+                ->where('tanggal', $tanggal)
+                ->where('jam_mulai', '<', $slot['end'])
+                ->where('jam_selesai', '>', $slot['start'])
+                ->whereHas('reservasi', function ($q) {
+                    $q->whereIn('status', ['pending', 'disetujui']);
                 })
-                ->whereIn('status', ['pending', 'disetujui'])
                 ->exists();
 
-            if ($bentrokCoach) {
+            if ($bentrokLapangan) {
                 return back()
-                    ->withErrors(['coach_id' => 'Coach ini sudah memiliki jadwal di jam tersebut. Silakan pilih jam atau coach lain.'])
+                    ->withErrors([
+                        'slots' => "Jam {$slot['start']} - {$slot['end']} sudah dipesan. Silakan pilih jam lain."
+                    ])
                     ->withInput();
             }
         }
 
-        // 1. Buat reservasi dulu dengan status pending & unpaid
+        // Cek bentrok untuk coach (kalau dipilih)
+        if ($coachId) {
+            foreach ($parsedSlots as $slot) {
+                $bentrokCoach = ReservasiSlot::where('tanggal', $tanggal)
+                    ->where('jam_mulai', '<', $slot['end'])
+                    ->where('jam_selesai', '>', $slot['start'])
+                    ->whereHas('reservasi', function ($q) use ($coachId) {
+                        $q->where('coach_id', $coachId)
+                        ->whereIn('status', ['pending', 'disetujui']);
+                    })
+                    ->exists();
+
+                if ($bentrokCoach) {
+                    return back()
+                        ->withErrors([
+                            'coach_id' => "Coach ini sudah ada jadwal di jam {$slot['start']} - {$slot['end']}."
+                        ])
+                        ->withInput();
+                }
+            }
+        }
+
+        // Hitung ringkasan untuk kolom di tabel 'reservasis'
+        $jamMulai   = $parsedSlots[0]['start'];
+        $jamSelesai = end($parsedSlots)['end'];
+        $totalJam   = count($parsedSlots);
+        $totalHarga = $totalJam * $lapangan->price_per_hour;
+
+        // 1. Buat reservasi
         $reservasi = Reservasi::create([
             'user_id'                => Auth::id(),
             'lapangan_id'            => $lapangan->id,
-            'coach_id'               => $coachId, // <-- simpan coach
-            'tanggal'                => $request->tanggal,
+            'coach_id'               => $coachId,
+            'tanggal'                => $tanggal,
             'jam_mulai'              => $jamMulai,
-            'durasi'                 => $durasi,
+            'durasi'                 => $totalJam,
             'jam_selesai'            => $jamSelesai,
             'total_harga'            => $totalHarga,
             'status'                 => 'pending',
@@ -147,11 +203,21 @@ class ReservasiController extends Controller
             'paid_at'                => null,
         ]);
 
-        // 2. Siapkan parameter untuk Midtrans Snap
-        $orderId = $reservasi->id; // pakai UUID reservasi sebagai order_id
+        // 2. Simpan semua slot ke tabel 'reservasi_slots'
+        foreach ($parsedSlots as $slot) {
+            ReservasiSlot::create([
+                'reservasi_id' => $reservasi->id,
+                'lapangan_id'  => $lapangan->id,
+                'tanggal'      => $tanggal,
+                'jam_mulai'    => $slot['start'],
+                'jam_selesai'  => $slot['end'],
+            ]);
+        }
 
-        // Tambah info coach di nama item kalau ada
+        // 3. Midtrans Snap
+        $orderId  = $reservasi->id;
         $itemName = 'Sewa Lapangan Padel - ' . ($lapangan->location ?? 'Lapangan');
+
         if ($coachId && $reservasi->coach) {
             $itemName .= ' (dengan Coach ' . $reservasi->coach->name . ')';
         }
@@ -169,26 +235,24 @@ class ReservasiController extends Controller
                 [
                     'id'       => $lapangan->id,
                     'price'    => $lapangan->price_per_hour,
-                    'quantity' => $durasi, // pakai integer durasi
+                    'quantity' => $totalJam, // jumlah jam yang dipilih
                     'name'     => $itemName,
                 ],
             ],
         ];
 
-        // 3. Dapatkan Snap Token dari Midtrans
         $snapToken = Snap::getSnapToken($params);
 
-        // Simpan order_id / transaction_id kalau mau
         $reservasi->update([
             'payment_transaction_id' => $orderId,
         ]);
 
-        // 4. Kirim ke view yang akan menjalankan Snap JS
         return view('reservasi.pay', [
             'reservasi' => $reservasi,
             'snapToken' => $snapToken,
         ]);
     }
+
 
     /**
      * Callback / webhook dari Midtrans.

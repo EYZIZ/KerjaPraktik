@@ -76,8 +76,8 @@
             text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9);
         }
 
-        /* ===== CAROUSEL DOT CUSTOM ===== */
-        #lapanganCarousel .carousel-indicators {
+        /* ===== CAROUSEL DOT CUSTOM (Court & Coach) ===== */
+        .lux-carousel .carousel-indicators {
             position: static;
             margin-top: 16px;
             margin-bottom: 0;
@@ -86,7 +86,7 @@
             gap: 6px;
         }
 
-        #lapanganCarousel .carousel-indicators [data-bs-target] {
+        .lux-carousel .carousel-indicators [data-bs-target] {
             width: 10px;
             height: 10px;
             border-radius: 50%;
@@ -95,40 +95,37 @@
             opacity: 1;
         }
 
-        #lapanganCarousel .carousel-indicators .active {
+        .lux-carousel .carousel-indicators .active {
             background-color: #0d6efd;
         }
 
         /* WRAPPER UTAMA SEMUA SECTION */
         .section-center {
             width: 100%;
-            max-width: 100%;      /* default: ikut lebar layar (buat HP) */
+            max-width: 100%;
             margin: 0 auto;
-            padding: 0 10px;      /* jarak kecil kiri kanan */
+            padding: 0 10px;
         }
 
-        /* Tablet ke atas */
         @media (min-width: 768px) {
             .section-center {
                 max-width: 720px;
             }
         }
 
-        /* Laptop sedang (992px ke atas) */
         @media (min-width: 992px) {
             .section-center {
                 max-width: 900px;
             }
         }
 
-        /* Laptop / monitor besar (1200px ke atas) */
         @media (min-width: 1200px) {
             .section-center {
                 max-width: 1050px;
             }
         }
 
-        /* ===== HAPUS PADING PEMBATAS DI WRAPPER UTAMA ===== */
+        /* ===== HAPUS PADDING PEMBATAS DI WRAPPER UTAMA ===== */
         .hero-area .container {
             padding-left: 0 !important;
             padding-right: 0 !important;
@@ -140,7 +137,6 @@
             padding-right: 0 !important;
             max-width: 100% !important;
         }
-
     </style>
 
     <div style="background: transparent;">
@@ -217,7 +213,7 @@
                 <h2 class="fw-bold text-dark mb-3">Luxury Padel Court</h2>
 
                 @if($lapangans->count())
-                    <div id="lapanganCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div id="lapanganCarousel" class="carousel slide lux-carousel" data-bs-ride="carousel">
 
                         <div class="carousel-inner">
                             @foreach($lapangans as $lapangan)
@@ -287,6 +283,93 @@
                     </div>
                 @else
                     <p class="text-muted">Belum ada data lapangan.</p>
+                @endif
+            </div>
+        </div>
+
+        {{-- SECTION COACH: CAROUSEL MIRIP COURT --}}
+        <div class="py-4">
+            <div class="section-center text-center">
+                <h2 class="fw-bold text-dark mb-3">Our Professional Coaches</h2>
+
+                @if(isset($coaches) && $coaches->count())
+                    <div id="coachCarousel" class="carousel slide lux-carousel" data-bs-ride="carousel">
+
+                        <div class="carousel-inner">
+                            @foreach($coaches as $coach)
+                                <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+                                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden w-100">
+
+                                        {{-- Foto Coach --}}
+                                        <div style="height: 320px; overflow: hidden;">
+                                            @if($coach->photo)
+                                                <img src="{{ asset('storage/' . $coach->photo) }}"
+                                                     class="w-100 h-100"
+                                                     style="object-fit: cover;"
+                                                     alt="{{ $coach->name }}">
+                                            @else
+                                                <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-muted">
+                                                    No photo
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Detail Coach --}}
+                                        <div class="p-4" style="background:#fdfaf4;">
+                                            <h4 class="fw-bold text-dark mb-1">
+                                                {{ $coach->name }}
+                                            </h4>
+
+                                            @if($coach->speciality ?? false)
+                                                <p class="mb-1 text-muted">
+                                                    {{ $coach->speciality }}
+                                                </p>
+                                            @endif
+
+                                            @if(isset($coach->price))
+                                                <p class="mb-3 fw-semibold" style="color:#00805C;">
+                                                    Rp {{ number_format($coach->price, 0, ',', '.') }} / session
+                                                </p>
+                                            @endif
+
+                                            {{-- Sesuaikan route ini dengan kebutuhanmu --}}
+                                            <a href="{{ route('reservasi.create', ['lapangan_id' => $lapangans->first()->id ?? null]) }}"
+                                               class="btn btn-outline-success px-4 py-2 rounded-pill fw-semibold">
+                                                Book with {{ $coach->name }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- DOT INDICATOR --}}
+                        <div class="carousel-indicators">
+                            @foreach($coaches as $item)
+                                <button type="button"
+                                        data-bs-target="#coachCarousel"
+                                        data-bs-slide-to="{{ $loop->index }}"
+                                        class="{{ $loop->first ? 'active' : '' }}"
+                                        @if($loop->first) aria-current="true" @endif
+                                        aria-label="Coach {{ $loop->iteration }}">
+                                </button>
+                            @endforeach
+                        </div>
+
+                        {{-- TOMBOL NEXT/PREV --}}
+                        <button class="carousel-control-prev" type="button"
+                                data-bs-target="#coachCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button"
+                                data-bs-target="#coachCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                @else
+                    <p class="text-muted">Belum ada data coach.</p>
                 @endif
             </div>
         </div>

@@ -69,14 +69,14 @@ Route::middleware(['auth','role:admin'])->group(function () {
     Route::post('/coach', [CoachController::class, 'store'])
         ->name('coach.store');
 
-    Route::get('/coach/{id}/edit', [CoachController::class, 'edit'])
+    Route::get('/coach/{coach}/edit', [CoachController::class, 'edit'])
         ->name('coach.edit');
 
-    Route::put('/coach/{id}', [CoachController::class, 'update'])
+    Route::put('/coach/{coach}', [CoachController::class, 'update'])
         ->name('coach.update');
 
     // Batalkan reservasi (kalau unpaid)
-    Route::delete('/coach/{reservasi}', [CoachController::class, 'destroy'])
+    Route::delete('/coach/{coach}', [CoachController::class, 'destroy'])
         ->name('coach.destroy');
 });
 
