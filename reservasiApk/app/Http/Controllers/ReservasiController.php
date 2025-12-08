@@ -49,6 +49,12 @@ class ReservasiController extends Controller
         $lapangans = Lapangan::where('status', 'Tersedia')->get();
         $coaches   = Coach::all();
 
+        // --- coach terpilih dari query ?coach_id=... (boleh null) ---
+        $coachTerpilih = null;
+        if ($request->filled('coach_id')) {
+            $coachTerpilih = $coaches->firstWhere('id', $request->coach_id);
+        }
+
         // --- pilih lapangan seperti sebelumnya ---
         $lapanganTerpilih = null;
         if ($request->has('lapangan_id')) {
@@ -63,7 +69,7 @@ class ReservasiController extends Controller
                 'lapangans'        => $lapangans,
                 'lapanganTerpilih' => null,
                 'coaches'          => $coaches,
-                'coachTerpilih'    => null,
+                'coachTerpilih'    => $coachTerpilih,
                 'tanggal'          => null,
                 'dateTabs'         => [],
                 'bookedSlots'      => [],
@@ -102,12 +108,13 @@ class ReservasiController extends Controller
             'lapangans'        => $lapangans,
             'lapanganTerpilih' => $lapanganTerpilih,
             'coaches'          => $coaches,
-            'coachTerpilih'    => null,
+            'coachTerpilih'    => $coachTerpilih,
             'tanggal'          => $tanggalAktif->toDateString(),
             'dateTabs'         => $dateTabs,
             'bookedSlots'      => $bookedSlots,
         ]);
     }
+
 
     /**
      * Simpan reservasi + buat transaksi pembayaran (Midtrans Snap).
@@ -124,6 +131,15 @@ class ReservasiController extends Controller
         $lapangan = Lapangan::findOrFail($request->lapangan_id);
         $coachId  = $request->coach_id ?: null;
         $tanggal  = $request->tanggal;
+
+        // ====== AMBIL HARGA COACH (per session) ======
+        $coachPrice = 0;
+        $coach      = null;
+
+        if ($coachId) {
+            $coach = Coach::find($coachId);
+            $coachPrice = $coach?->price ?? 0;
+        }
 
         // PARSE SLOT: "07:00-08:00" -> ['start' => '07:00', 'end' => '08:00']
         $parsedSlots = [];
@@ -180,11 +196,13 @@ class ReservasiController extends Controller
             }
         }
 
-        // Hitung ringkasan untuk kolom di tabel 'reservasis'
+        // ====== HITUNG RINGKASAN ======
         $jamMulai   = $parsedSlots[0]['start'];
         $jamSelesai = end($parsedSlots)['end'];
         $totalJam   = count($parsedSlots);
-        $totalHarga = $totalJam * $lapangan->price_per_hour;
+
+        $totalLapangan = $totalJam * $lapangan->price_per_hour;
+        $totalHarga    = $totalLapangan + $coachPrice;   // <--- plus coach
 
         // 1. Buat reservasi
         $reservasi = Reservasi::create([
@@ -195,7 +213,7 @@ class ReservasiController extends Controller
             'jam_mulai'              => $jamMulai,
             'durasi'                 => $totalJam,
             'jam_selesai'            => $jamSelesai,
-            'total_harga'            => $totalHarga,
+            'total_harga'            => $totalHarga,      // <--- sudah plus coach
             'status'                 => 'pending',
             'payment_status'         => 'unpaid',
             'payment_method'         => 'midtrans',
@@ -216,29 +234,36 @@ class ReservasiController extends Controller
 
         // 3. Midtrans Snap
         $orderId  = $reservasi->id;
-        $itemName = 'Sewa Lapangan Padel - ' . ($lapangan->location ?? 'Lapangan');
 
-        if ($coachId && $reservasi->coach) {
-            $itemName .= ' (dengan Coach ' . $reservasi->coach->name . ')';
+        $itemDetails = [
+            [
+                'id'       => $lapangan->id,
+                'price'    => $lapangan->price_per_hour,
+                'quantity' => $totalJam,
+                'name'     => 'Sewa Lapangan Padel - ' . ($lapangan->location ?? 'Lapangan'),
+            ],
+        ];
+
+        // Tambah item coach kalau ada
+        if ($coachId && $coach) {
+            $itemDetails[] = [
+                'id'       => 'coach-' . $coach->id,
+                'price'    => $coachPrice,
+                'quantity' => 1,
+                'name'     => 'Coach ' . $coach->name,
+            ];
         }
 
         $params = [
             'transaction_details' => [
                 'order_id'     => $orderId,
-                'gross_amount' => $totalHarga,
+                'gross_amount' => $totalHarga,   // <--- total lapangan + coach
             ],
             'customer_details' => [
                 'first_name' => Auth::user()->name,
                 'email'      => Auth::user()->email,
             ],
-            'item_details' => [
-                [
-                    'id'       => $lapangan->id,
-                    'price'    => $lapangan->price_per_hour,
-                    'quantity' => $totalJam, // jumlah jam yang dipilih
-                    'name'     => $itemName,
-                ],
-            ],
+            'item_details' => $itemDetails,
         ];
 
         $snapToken = Snap::getSnapToken($params);
@@ -252,6 +277,7 @@ class ReservasiController extends Controller
             'snapToken' => $snapToken,
         ]);
     }
+
 
 
     /**

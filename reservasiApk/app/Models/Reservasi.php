@@ -19,6 +19,7 @@ class Reservasi extends Model
     protected $fillable = [
         'user_id',
         'lapangan_id',
+        'coach_id',
         'tanggal',
         'jam_mulai',
         'durasi',
@@ -54,7 +55,7 @@ class Reservasi extends Model
     {
         return $this->belongsTo(Lapangan::class);
     }
-    
+
     public function coach()
     {
         return $this->belongsTo(Coach::class, 'coach_id');

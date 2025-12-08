@@ -183,7 +183,7 @@
 
 <div class="booking-page">
     <div class="booking-container py-4">
-        <h3 class="fw-bold mb-3 text-center">Reserve Your Court</h3>
+        <h3 class="fw-bold text-white mb-3 text-center">Reserve Your Court</h3>
 
         {{-- ALERT ERROR --}}
         @if ($errors->any())
@@ -206,7 +206,6 @@
         <div class="date-tabs">
             @foreach($dateTabs as $tab)
                 @php
-                    // pastikan locale id
                     $carbonDate = \Carbon\Carbon::parse($tab['value'])->locale('id');
                 @endphp
 
@@ -214,98 +213,93 @@
                         'lapangan_id' => $lapanganTerpilih->id,
                         'tanggal'     => $tab['value'],
                     ]) }}"
-                class="date-pill {{ $tab['isActive'] ? 'active' : '' }}">
+                   class="date-pill {{ $tab['isActive'] ? 'active' : '' }}">
 
-                    {{-- HARI LENGKAP: Senin, Selasa, Rabu, ... --}}
+                    {{-- HARI LENGKAP --}}
                     <div class="day-name">
                         {{ $carbonDate->translatedFormat('l') }}
                     </div>
 
-                    {{-- TANGGAL (01, 02, 03, ...) --}}
+                    {{-- TANGGAL --}}
                     <div class="day-num">
                         {{ $carbonDate->format('d') }}
                     </div>
 
-                    {{-- BULAN (Jan, Feb, Mar) versi Indonesia --}}
+                    {{-- BULAN (singkat, ID) --}}
                     <div class="month">
                         {{ $carbonDate->translatedFormat('M') }}
-                        {{-- kalau mau full: translatedFormat('F') -> "Desember" --}}
                     </div>
                 </a>
             @endforeach
         </div>
 
-
-        {{-- KARTU INFO LAPANGAN + JAM --}}
-        <div class="card booking-card">
-            <div class="row no-gutter">
-                {{-- FOTO LAPANGAN --}}
-                <div class="col-lg-5 col-12 no-padding">
-                    <div style="height: 100%; min-height: 220px; overflow:hidden;">
-                        @if($lapanganTerpilih->photo)
-                            <img src="{{ asset('storage/'.$lapanganTerpilih->photo) }}"
-                                 class="w-100 h-100"
-                                 style="object-fit:cover;"
-                                 alt="{{ $lapanganTerpilih->location }}">
-                        @else
-                            <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-muted">
-                                No photo
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                {{-- INFO LAPANGAN + JAM --}}
-                <div class="col-lg-7 col-12 no-padding">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-1">{{ $lapanganTerpilih->location }}</h5>
-
-                        <div class="slot-grid">
-                            @for ($h = 7; $h < 23; $h++)
-                                @php
-                                    $start = sprintf('%02d:00', $h);
-                                    $end   = sprintf('%02d:00', $h + 1);
-                                    $label = $start . ' - ' . $end;
-                                    $value = $start . '-' . $end;
-                                    $isBooked = in_array($start, $bookedSlots);
-                                @endphp
-
-                                @if ($isBooked)
-                                    @continue
-                                @endif
-
-                                <button type="button"
-                                        class="btn btn-sm slot-btn btn-outline-success"
-                                        data-value="{{ $value }}">
-                                    <span class="slot-time">{{ $label }}</span>
-                                    <span class="slot-price">
-                                        Rp {{ number_format($lapanganTerpilih->price_per_hour, 0, ',', '.') }}
-                                    </span>
-                                </button>
-                            @endfor
-                        </div>
-
-                        {{-- hidden inputs --}}
-                        <div id="slotsContainer"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- FORM POST RESERVASI --}}
+        {{-- FORM POST RESERVASI (card + input tersembunyi semua di dalam form) --}}
         <form method="POST" action="{{ route('reservasi.store') }}" id="formReservasi">
             @csrf
             <input type="hidden" name="lapangan_id" value="{{ $lapanganTerpilih->id }}">
             <input type="hidden" name="tanggal" value="{{ $tanggal }}">
 
-            {{-- PILIH COACH (OPSIONAL) --}}
+            {{-- KARTU INFO LAPANGAN + JAM --}}
+            <div class="card booking-card mb-4">
+                <div class="row no-gutter">
+                    {{-- FOTO LAPANGAN --}}
+                    <div class="col-lg-5 col-12 no-padding">
+                        <div style="height: 100%; min-height: 220px; overflow:hidden;">
+                            @if($lapanganTerpilih->photo)
+                                <img src="{{ asset('storage/'.$lapanganTerpilih->photo) }}"
+                                     class="w-100 h-100"
+                                     style="object-fit:cover;"
+                                     alt="{{ $lapanganTerpilih->location }}">
+                            @else
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-muted">
+                                    No photo
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- INFO LAPANGAN + JAM --}}
+                    <div class="col-lg-7 col-12 no-padding">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-1">{{ $lapanganTerpilih->location }}</h5>
+
+                            <div class="slot-grid">
+                                @for ($h = 7; $h < 23; $h++)
+                                    @php
+                                        $start = sprintf('%02d:00', $h);
+                                        $end   = sprintf('%02d:00', $h + 1);
+                                        $label = $start . ' - ' . $end;
+                                        $value = $start . '-' . $end;
+                                        $isBooked = in_array($start, $bookedSlots);
+                                    @endphp
+
+                                    @if ($isBooked)
+                                        @continue
+                                    @endif
+
+                                    <button type="button"
+                                            class="btn btn-sm slot-btn btn-outline-success"
+                                            data-value="{{ $value }}">
+                                        <span class="slot-time">{{ $label }}</span>
+                                        <span class="slot-price">
+                                            Rp {{ number_format($lapanganTerpilih->price_per_hour, 0, ',', '.') }}
+                                        </span>
+                                    </button>
+                                @endfor
+                            </div>
+                            <div id="slotsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-3">
-                <label class="form-label fw-semibold">Select Coach (optional)</label>
+                <label class="form-label fw-semibold">Select Coach</label>
                 <select name="coach_id" class="form-select">
                     <option value="">-- No Coach --</option>
                     @foreach($coaches as $coach)
                         <option value="{{ $coach->id }}"
-                            {{ old('coach_id') == $coach->id ? 'selected' : '' }}>
+                            {{ old('coach_id', optional($coachTerpilih)->id) == $coach->id ? 'selected' : '' }}>
                             {{ $coach->name }} (Rp {{ number_format($coach->price,0,',','.') }} / session)
                         </option>
                     @endforeach
@@ -345,10 +339,12 @@
             const idx = selectedSlots.indexOf(value);
 
             if (idx === -1) {
+                // pilih
                 selectedSlots.push(value);
                 btn.classList.remove('btn-outline-success');
                 btn.classList.add('btn-success', 'text-white');
             } else {
+                // batal pilih
                 selectedSlots.splice(idx, 1);
                 btn.classList.add('btn-outline-success');
                 btn.classList.remove('btn-success', 'text-white');
@@ -382,3 +378,4 @@
     }
 </script>
 @endsection
+

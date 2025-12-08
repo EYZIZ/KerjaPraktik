@@ -72,12 +72,12 @@
 
         /* Hero digeser ke bawah */
         .hero-area {
-            background: #02b008 !important;
+            background: #1B4D3E !important;
             padding-top: 120px;
         }
 
         body {
-            background: #02b008 !important;
+            background: #1B4D3E !important;
         }
 
         /* ==================== FIX: HAPUS OUTLINE / HOVER BACKGROUND NAVBAR ==================== */

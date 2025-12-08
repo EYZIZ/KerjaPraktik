@@ -18,7 +18,7 @@
 
     {{-- Judul --}}
     <div class="text-center mb-5">
-        <h1 class="fw-bold display-6 text-dark">
+        <h1 class="fw-bold display-6 text-white">
             Hubungi Kami
         </h1>
         <p class="mt-2 text-muted">

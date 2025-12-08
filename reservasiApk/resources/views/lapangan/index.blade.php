@@ -24,7 +24,7 @@
     {{-- HEADER SECTION --}}
     <div class="d-flex flex-column flex-md-row justify-content-between
                 align-items-start align-items-md-center gap-2 mb-4">
-        <h3 class="fw-bold mb-0 text-center text-md-start">
+        <h3 class="fw-bold mb-0 text-center text-white text-md-start">
             Daftar Lapangan Padel
         </h3>
 

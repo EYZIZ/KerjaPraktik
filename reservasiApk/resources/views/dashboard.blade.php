@@ -137,6 +137,111 @@
             padding-right: 0 !important;
             max-width: 100% !important;
         }
+
+        /* ====== MODAL CUSTOM PILIH LAPANGAN UNTUK COACH ====== */
+        .coach-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+        }
+
+        .coach-overlay.d-none {
+            display: none !important;
+        }
+
+        .coach-modal {
+            background: #ffffff;
+            border-radius: 16px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .coach-modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coach-modal-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .coach-modal-body {
+            padding: 12px 18px 16px;
+            max-height: 360px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .coach-close-btn {
+            border: none;
+            background: transparent;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0;
+        }
+
+        /* Card lapangan di dalam popup */
+        .choose-court-card {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .choose-court-img {
+            width: 110px;
+            height: 90px;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: #f1f1f1;
+        }
+
+        .choose-court-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .choose-court-body {
+            padding: 8px 10px 8px 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .choose-court-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+            color: #111827;
+        }
+
+        .choose-court-price {
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .choose-court-btn {
+            font-size: 0.85rem;
+            padding: 5px 10px;
+        }
     </style>
 
     <div style="background: transparent;">
@@ -210,7 +315,7 @@
         {{-- SECTION LAPANGAN: CAROUSEL + DOT --}}
         <div class="py-3">
             <div class="section-center text-center">
-                <h2 class="fw-bold text-dark mb-3">Luxury Padel Court</h2>
+                <h2 class="fw-bold text-white mb-3">Luxury Padel Court</h2>
 
                 @if($lapangans->count())
                     <div id="lapanganCarousel" class="carousel slide lux-carousel" data-bs-ride="carousel">
@@ -290,7 +395,7 @@
         {{-- SECTION COACH: CAROUSEL MIRIP COURT --}}
         <div class="py-4">
             <div class="section-center text-center">
-                <h2 class="fw-bold text-dark mb-3">Our Professional Coaches</h2>
+                <h2 class="fw-bold text-white mb-3">Our Professional Coaches</h2>
 
                 @if(isset($coaches) && $coaches->count())
                     <div id="coachCarousel" class="carousel slide lux-carousel" data-bs-ride="carousel">
@@ -332,11 +437,13 @@
                                                 </p>
                                             @endif
 
-                                            {{-- Sesuaikan route ini dengan kebutuhanmu --}}
-                                            <a href="{{ route('reservasi.create', ['lapangan_id' => $lapangans->first()->id ?? null]) }}"
-                                               class="btn btn-outline-success px-4 py-2 rounded-pill fw-semibold">
+                                            {{-- TOMBOL BUKA POPUP PILIH LAPANGAN --}}
+                                            <button type="button"
+                                                    class="btn btn-outline-success px-4 py-2 rounded-pill fw-semibold btn-book-coach"
+                                                    data-coach-id="{{ $coach->id }}"
+                                                    data-coach-name="{{ $coach->name }}">
                                                 Book with {{ $coach->name }}
-                                            </a>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -396,4 +503,110 @@
             </div>
         </div>
     </div>
+
+    {{-- POPUP CUSTOM: PILIH LAPANGAN UNTUK COACH --}}
+    @if($lapangans->count())
+        <div id="coachOverlay" class="coach-overlay d-none">
+            <div class="coach-modal">
+                <div class="coach-modal-header">
+                    <h5 class="coach-modal-title">
+                        Pilih Lapangan untuk <span id="coachNameModal"></span>
+                    </h5>
+                    <button type="button" id="closeCoachOverlay" class="coach-close-btn" aria-label="Close">
+                        &times;
+                    </button>
+                </div>
+                <div class="coach-modal-body">
+                    @foreach($lapangans as $lap)
+                        <div class="choose-court-card">
+                            <div class="choose-court-img">
+                                @if($lap->photo)
+                                    <img src="{{ asset('storage/' . $lap->photo) }}"
+                                         alt="{{ $lap->location }}">
+                                @else
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                        No photo
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="choose-court-body">
+                                <div class="choose-court-title">
+                                    {{ $lap->location }}
+                                </div>
+
+                                @if(isset($lap->price_per_hour))
+                                    <div class="choose-court-price">
+                                        Rp {{ number_format($lap->price_per_hour, 0, ',', '.') }} / hour
+                                    </div>
+                                @endif
+
+                                <button type="button"
+                                        class="btn btn-success btn-sm rounded-pill choose-court-btn"
+                                        data-lapangan-id="{{ $lap->id }}">
+                                    Book
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <script>
+        const reservasiBaseUrl = "{{ route('reservasi.create') }}";
+
+        let selectedCoachId = null;
+
+        const coachOverlay   = document.getElementById('coachOverlay');
+        const coachNameModal = document.getElementById('coachNameModal');
+        const closeCoachBtn  = document.getElementById('closeCoachOverlay');
+
+        // Buka overlay saat klik "Book with ..."
+        document.querySelectorAll('.btn-book-coach').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!coachOverlay) return;
+
+                selectedCoachId = this.getAttribute('data-coach-id');
+                const coachName = this.getAttribute('data-coach-name') || '';
+
+                if (coachNameModal) {
+                    coachNameModal.textContent = coachName;
+                }
+
+                coachOverlay.classList.remove('d-none');
+            });
+        });
+
+        // Klik tombol Book di card lapangan -> redirect ke reservasi
+        document.querySelectorAll('.choose-court-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!selectedCoachId) return;
+
+                const lapanganId = this.getAttribute('data-lapangan-id');
+                if (!lapanganId) return;
+
+                const url = reservasiBaseUrl
+                    + '?lapangan_id=' + encodeURIComponent(lapanganId)
+                    + '&coach_id=' + encodeURIComponent(selectedCoachId);
+
+                window.location.href = url;
+            });
+        });
+
+        // Tutup overlay via tombol X
+        if (closeCoachBtn && coachOverlay) {
+            closeCoachBtn.addEventListener('click', function () {
+                coachOverlay.classList.add('d-none');
+            });
+
+            // Tutup saat klik area gelap di luar modal
+            coachOverlay.addEventListener('click', function (e) {
+                if (e.target === coachOverlay) {
+                    coachOverlay.classList.add('d-none');
+                }
+            });
+        }
+    </script>
 @endsection
