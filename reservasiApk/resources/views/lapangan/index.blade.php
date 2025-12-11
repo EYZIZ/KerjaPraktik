@@ -28,10 +28,12 @@
             Daftar Lapangan Padel
         </h3>
 
-        <a href="{{ route('lapangan.create') }}"
-           class="btn btn-success btn-create-court d-block d-md-inline-block text-center">
-            Create Court
-        </a>
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <a href="{{ route('lapangan.create') }}"
+            class="btn btn-success btn-create-court d-block d-md-inline-block text-center">
+                Create Court
+            </a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -85,9 +87,11 @@
                     </div>
 
                     <div class="card-footer bg-white border-0 d-flex justify-content-between pt-0 pb-3 px-3">
-                        <a href="{{ route('lapangan.edit', $lapangan->id) }}" class="btn btn-sm btn-warning">
-                            Edit
-                        </a>
+                        @if(auth()->check() && auth()->user()->role === 'admin')
+                            <a href="{{ route('lapangan.edit', $lapangan->id) }}" class="btn btn-sm btn-warning">
+                                Edit
+                            </a>
+                        @endif
 
                         {{-- Tombol buat reservasi lapangan ini --}}
                         <a href="{{ route('reservasi.create', ['lapangan_id' => $lapangan->id]) }}"

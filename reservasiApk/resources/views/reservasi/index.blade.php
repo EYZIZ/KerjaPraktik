@@ -7,9 +7,11 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-white mb-0">Riwayat Reservasi</h3>
-        <a href="{{ route('reservasi.create') }}" class="btn btn-primary">
-            + Reservasi Baru
-        </a>
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <a href="{{ route('reservasi.create') }}" class="btn btn-primary">
+                Reservasi Baru
+            </a>
+        @endif
     </div>
 
     @if(session('success'))

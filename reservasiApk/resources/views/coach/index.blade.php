@@ -50,10 +50,12 @@
             Daftar Coach Padel
         </h3>
 
-        <a href="{{ route('coach.create') }}"
-           class="btn btn-success btn-create text-center">
-            Create Coach
-        </a>
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <a href="{{ route('coach.create') }}"
+            class="btn btn-success btn-create text-center">
+                Create Coach
+            </a>
+        @endif
     </div>
 
     {{-- ALERT --}}
@@ -104,21 +106,23 @@
                     {{-- Tombol --}}
                     <div class="card-footer bg-white border-0 d-flex justify-content-between px-3 pb-3">
 
-                        <a href="{{ route('coach.edit', $coach->id) }}"
-                           class="btn btn-warning">
-                            Edit
-                        </a>
+                        @if(auth()->check() && auth()->user()->role === 'admin')
+                            <a href="{{ route('coach.edit', $coach->id) }}"
+                            class="btn btn-warning">
+                                Edit
+                            </a>
 
-                        <form action="{{ route('coach.destroy', $coach->id) }}"
-                              method="POST"
-                              onsubmit="return confirm('Hapus coach ini?')">
-                            @csrf
-                            @method('DELETE')
+                            <form action="{{ route('coach.destroy', $coach->id) }}"
+                                method="POST"
+                                onsubmit="return confirm('Hapus coach ini?')">
+                                @csrf
+                                @method('DELETE')
 
-                            <button type="submit" class="btn btn-danger">
-                                Hapus
-                            </button>
-                        </form>
+                                <button type="submit" class="btn btn-danger">
+                                    Hapus
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>

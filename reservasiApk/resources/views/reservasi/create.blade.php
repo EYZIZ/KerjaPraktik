@@ -212,8 +212,9 @@
                 <a href="{{ route('reservasi.create', [
                         'lapangan_id' => $lapanganTerpilih->id,
                         'tanggal'     => $tab['value'],
+                        'coach_id'    => request('coach_id') ?? optional($coachTerpilih)->id,
                     ]) }}"
-                   class="date-pill {{ $tab['isActive'] ? 'active' : '' }}">
+                class="date-pill {{ $tab['isActive'] ? 'active' : '' }}">
 
                     {{-- HARI LENGKAP --}}
                     <div class="day-name">
