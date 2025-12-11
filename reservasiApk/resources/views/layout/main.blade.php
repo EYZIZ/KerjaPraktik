@@ -80,9 +80,6 @@
             background: #1B4D3E !important;
         }
 
-        /* ==================== FIX: HAPUS OUTLINE / HOVER BACKGROUND NAVBAR ==================== */
-
-        /* Hilangkan efek button pada link navbar */
         .header.navbar-area .navbar-nav .nav-item a,
         .header.navbar-area .navbar-nav .nav-item a:hover,
         .header.navbar-area .navbar-nav .nav-item a:focus,
@@ -94,7 +91,6 @@
             border: none !important;
         }
 
-        /* Hilangkan pseudo underline jika template memakai efek garis */
         .header.navbar-area .navbar-nav .nav-item a::before,
         .header.navbar-area .navbar-nav .nav-item a::after {
             content: none !important;
@@ -170,6 +166,12 @@
                                         <a href="{{ url('kontak') }}">Kontak Kami</a>
                                     </li>
 
+                                    @if(auth()->check() && auth()->user()->role === 'admin')
+                                        <li class="nav-item">
+                                            <a href="#">Laporan</a>
+                                        </li>
+                                    @endif
+
                                     @guest
                                     <li class="nav-item">
                                         <a href="{{ route('login') }}" class="btn bg-transparent">Login</a>
@@ -218,11 +220,6 @@
             </div>
         </div>
     </section>
-
-    {{--  <!-- SCROLL TOP -->
-    <a href="#" class="scroll-top">
-        <i class="lni lni-chevron-up"></i>
-    </a>  --}}
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
