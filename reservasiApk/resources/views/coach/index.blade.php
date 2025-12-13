@@ -111,17 +111,6 @@
                             class="btn btn-warning">
                                 Edit
                             </a>
-
-                            <form action="{{ route('coach.destroy', $coach->id) }}"
-                                method="POST"
-                                onsubmit="return confirm('Hapus coach ini?')">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit" class="btn btn-danger">
-                                    Hapus
-                                </button>
-                            </form>
                         @endif
                     </div>
                 </div>
