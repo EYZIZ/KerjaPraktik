@@ -35,17 +35,15 @@ class ReservasiController extends Controller
         $lapangans = Lapangan::where('status', 'Tersedia')->get();
         $coaches   = Coach::all();
 
+        // coach terpilih
         $coachTerpilih = null;
         if ($request->filled('coach_id')) {
             $coachTerpilih = $coaches->firstWhere('id', $request->coach_id);
         }
 
-        $lapanganTerpilih = null;
-        if ($request->has('lapangan_id')) {
-            $lapanganTerpilih = Lapangan::find($request->lapangan_id);
-        } else {
-            $lapanganTerpilih = $lapangans->first();
-        }
+        $lapanganTerpilih = $request->filled('lapangan_id')
+            ? Lapangan::find($request->lapangan_id)
+            : $lapangans->first();
 
         if (! $lapanganTerpilih) {
             return view('reservasi.create', [
@@ -56,18 +54,33 @@ class ReservasiController extends Controller
                 'tanggal'          => null,
                 'dateTabs'         => [],
                 'bookedSlots'      => [],
+                'hiddenSlots'      => [],
             ]);
         }
 
-        $tanggalAktif = $request->get('tanggal', Carbon::today()->toDateString());
+        $now = Carbon::now();
+
+        $tanggalAktif = $request->get('tanggal', $now->toDateString());
         $tanggalAktif = Carbon::parse($tanggalAktif)->startOfDay();
+
+        if ($tanggalAktif->lt($now->copy()->startOfDay())) {
+            return redirect()->route('reservasi.create', [
+                'lapangan_id' => $lapanganTerpilih->id,
+                'tanggal'     => $now->toDateString(),
+                'coach_id'    => $request->get('coach_id'),
+            ]);
+        }
 
         $firstOfMonth = $tanggalAktif->copy()->startOfMonth();
         $lastOfMonth  = $tanggalAktif->copy()->endOfMonth();
 
-        $dateTabs = [];
-        $current = $firstOfMonth->copy();
+        $startTabs = $firstOfMonth->copy();
+        if ($startTabs->lt($now->copy()->startOfDay())) {
+            $startTabs = $now->copy()->startOfDay();
+        }
 
+        $dateTabs = [];
+        $current = $startTabs->copy();
         while ($current->lte($lastOfMonth)) {
             $dateTabs[] = [
                 'value'    => $current->toDateString(),
@@ -79,10 +92,41 @@ class ReservasiController extends Controller
             $current->addDay();
         }
 
-        $bookedSlots = Reservasi::where('lapangan_id', $lapanganTerpilih->id)
+        $holdMinutes = 15;
+        $bookedSlots = ReservasiSlot::where('lapangan_id', $lapanganTerpilih->id)
             ->where('tanggal', $tanggalAktif->toDateString())
+            ->whereHas('reservasi', function ($q) use ($holdMinutes) {
+                $q->where(function ($x) use ($holdMinutes) {
+
+                    $x->where('payment_status', 'paid')
+
+                    ->orWhere(function ($y) use ($holdMinutes) {
+                        $y->where('payment_status', 'unpaid')
+                            ->where('created_at', '>', now()->subMinutes($holdMinutes));
+                    });
+
+                });
+            })
             ->pluck('jam_mulai')
+            ->map(fn ($t) => \Carbon\Carbon::parse($t)->format('H:i:s'))
+            ->unique()
+            ->values()
             ->toArray();
+
+        $expiredSlots = [];
+        if ($tanggalAktif->isSameDay($now)) {
+            for ($h = 7; $h < 23; $h++) {
+                $startDb = sprintf('%02d:00:00', $h);
+                $slotStart = Carbon::parse($tanggalAktif->toDateString() . ' ' . $startDb);
+
+                if ($slotStart->lte($now)) {
+                    $expiredSlots[] = $startDb;
+                }
+            }
+        }
+
+        // gabungan hide: booked + expired
+        $hiddenSlots = array_values(array_unique(array_merge($bookedSlots, $expiredSlots)));
 
         return view('reservasi.create', [
             'lapangans'        => $lapangans,
@@ -92,6 +136,7 @@ class ReservasiController extends Controller
             'tanggal'          => $tanggalAktif->toDateString(),
             'dateTabs'         => $dateTabs,
             'bookedSlots'      => $bookedSlots,
+            'hiddenSlots'      => $hiddenSlots,
         ]);
     }
 
@@ -118,6 +163,7 @@ class ReservasiController extends Controller
             $coachPrice = $coach?->price ?? 0;
         }
 
+        // parse slots dari UI: "07:00-08:00"
         $parsedSlots = [];
         foreach ($request->slots as $raw) {
             [$start, $end] = array_map('trim', explode('-', $raw));
@@ -125,14 +171,28 @@ class ReservasiController extends Controller
         }
         usort($parsedSlots, fn ($a, $b) => strcmp($a['start'], $b['start']));
 
-        // bentrok lapangan
+        /**
+         * DEFINISI "AKTIF" (yang mengunci slot):
+         * - payment_status = paid  -> selalu ngunci
+         * - payment_status = unpaid dan created_at > now()-15 menit -> masih hold
+         * FAILED / dibatalkan / expired -> tidak ngunci (slot kembali tersedia)
+         */
+        $activeHoldMinutes = 15;
+
+        // ===== bentrok lapangan =====
         foreach ($parsedSlots as $slot) {
             $bentrokLapangan = ReservasiSlot::where('lapangan_id', $lapangan->id)
                 ->where('tanggal', $tanggal)
                 ->where('jam_mulai', '<', $slot['end'])
                 ->where('jam_selesai', '>', $slot['start'])
-                ->whereHas('reservasi', function ($q) {
-                    $q->whereIn('status', ['pending', 'disetujui']);
+                ->whereHas('reservasi', function ($q) use ($activeHoldMinutes) {
+                    $q->where(function ($x) use ($activeHoldMinutes) {
+                        $x->where('payment_status', 'paid')
+                        ->orWhere(function ($y) use ($activeHoldMinutes) {
+                            $y->where('payment_status', 'unpaid')
+                                ->where('created_at', '>', now()->subMinutes($activeHoldMinutes));
+                        });
+                    });
                 })
                 ->exists();
 
@@ -143,14 +203,21 @@ class ReservasiController extends Controller
             }
         }
 
-        // bentrok coach
+        // ===== bentrok coach =====
         if ($coachId) {
             foreach ($parsedSlots as $slot) {
                 $bentrokCoach = ReservasiSlot::where('tanggal', $tanggal)
                     ->where('jam_mulai', '<', $slot['end'])
                     ->where('jam_selesai', '>', $slot['start'])
-                    ->whereHas('reservasi', function ($q) use ($coachId) {
-                        $q->where('coach_id', $coachId)->whereIn('status', ['pending', 'disetujui']);
+                    ->whereHas('reservasi', function ($q) use ($coachId, $activeHoldMinutes) {
+                        $q->where('coach_id', $coachId)
+                        ->where(function ($x) use ($activeHoldMinutes) {
+                            $x->where('payment_status', 'paid')
+                                ->orWhere(function ($y) use ($activeHoldMinutes) {
+                                    $y->where('payment_status', 'unpaid')
+                                    ->where('created_at', '>', now()->subMinutes($activeHoldMinutes));
+                                });
+                        });
                     })
                     ->exists();
 
@@ -162,6 +229,7 @@ class ReservasiController extends Controller
             }
         }
 
+        // hitung total
         $jamMulai   = $parsedSlots[0]['start'];
         $jamSelesai = end($parsedSlots)['end'];
         $totalJam   = count($parsedSlots);
@@ -181,13 +249,14 @@ class ReservasiController extends Controller
             'total_harga'            => $totalHarga,
             'status'                 => 'pending',
 
-            // payment default (belum bayar)
+            // payment default
             'payment_status'         => 'unpaid',
             'payment_method'         => null,
             'payment_transaction_id' => null,
             'paid_at'                => null,
         ]);
 
+        // simpan per jam di reservasi_slots (penting buat hide di create)
         foreach ($parsedSlots as $slot) {
             ReservasiSlot::create([
                 'reservasi_id' => $reservasi->id,
@@ -198,9 +267,9 @@ class ReservasiController extends Controller
             ]);
         }
 
-        // lanjut ke halaman pilih pembayaran (QRIS/BRIVA dummy)
         return redirect()->route('reservasi.pay', $reservasi->id);
     }
+
 
     /**
      * Halaman pilih pembayaran (hanya QRIS & BRIVA).
@@ -270,8 +339,10 @@ class ReservasiController extends Controller
         if (now()->greaterThan($deadline) && $reservasi->payment_status === 'unpaid') {
             $reservasi->update([
                 'payment_status' => 'failed',
+                'status'         => 'dibatalkan',
             ]);
         }
+
 
         $qrString = "DUMMYQRIS|{$reservasi->payment_transaction_id}|{$reservasi->total_harga}";
 
@@ -289,14 +360,30 @@ class ReservasiController extends Controller
             return redirect()->route('reservasi.pay', $reservasi->id);
         }
 
+        $tz = config('app.timezone', 'Asia/Jakarta');
+
         // contoh VA dummy (bukan VA asli)
         $vaDummy = '77777' . substr(preg_replace('/\D/', '', (string)$reservasi->payment_transaction_id), 0, 8);
         $vaDummy = substr($vaDummy, 0, 15);
 
-        $deadline = Carbon::parse($reservasi->created_at)->addMinutes(30);
+        // ✅ DEADLINE = 15 menit dari created_at
+        $deadline = \Carbon\Carbon::parse($reservasi->created_at, $tz)->addMinutes(15);
+        $now = \Carbon\Carbon::now($tz);
+
+        // ✅ kalau lewat deadline dan masih unpaid -> expired
+        if ($now->greaterThan($deadline) && $reservasi->payment_status === 'unpaid') {
+            $reservasi->update([
+                'payment_status' => 'failed',
+                'status'         => 'dibatalkan', // opsional, kalau kamu mau otomatis batal
+            ]);
+        }
+
+        // refresh state setelah update
+        $reservasi->refresh();
 
         return view('reservasi.briva', compact('reservasi', 'vaDummy', 'deadline'));
     }
+
 
     /**
      * Simulasi pembayaran sukses (testing).

@@ -267,14 +267,17 @@
                             <div class="slot-grid">
                                 @for ($h = 7; $h < 23; $h++)
                                     @php
-                                        $start = sprintf('%02d:00', $h);
-                                        $end   = sprintf('%02d:00', $h + 1);
-                                        $label = $start . ' - ' . $end;
-                                        $value = $start . '-' . $end;
-                                        $isBooked = in_array($start, $bookedSlots);
+                                        $startDb = sprintf('%02d:00:00', $h);
+                                        $endDb   = sprintf('%02d:00:00', $h + 1);
+
+                                        $label = substr($startDb, 0, 5) . ' - ' . substr($endDb, 0, 5);
+
+                                        $value = substr($startDb, 0, 5) . '-' . substr($endDb, 0, 5);
+
+                                        $isHidden = in_array($startDb, $hiddenSlots ?? []);
                                     @endphp
 
-                                    @if ($isBooked)
+                                    @if ($isHidden)
                                         @continue
                                     @endif
 

@@ -48,7 +48,7 @@
       </div>
 
       <small class="text-muted d-block mt-3">
-        Ini dummy untuk testing alur UI + status.
+        Note : Jika sudah melakukan pembayaran dan membatalkan tidak dapat melakukan pengembalian dana.
       </small>
 
     </div>
@@ -59,19 +59,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const deadlineIso = document.getElementById('deadline').dataset.deadline;
-    const deadline   = new Date(deadlineIso).getTime();
-    const el         = document.getElementById('countdown');
-    const btnPay     = document.getElementById('btnPay');
+    const deadlineMs  = new Date(deadlineIso).getTime();
+
+    const el     = document.getElementById('countdown');
+    const btnPay = document.getElementById('btnPay');
+
+    const redirectUrl = @json(route('reservasi.index'));
 
     function tick() {
-        const now = Date.now();
-        let diff  = Math.max(0, deadline - now);
-
-        const totalSeconds = Math.floor(diff / 1000);
-        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-        const seconds = String(totalSeconds % 60).padStart(2, '0');
-
-        el.textContent = `${minutes}:${seconds}`;
+        const nowMs = Date.now();
+        let diff    = deadlineMs - nowMs;
 
         if (diff <= 0) {
             el.textContent = '00:00';
@@ -84,11 +81,24 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             clearInterval(timer);
+
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1200);
+
+            return;
         }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+        el.textContent = `${minutes}:${seconds}`;
     }
 
     tick();
     const timer = setInterval(tick, 1000);
 });
 </script>
+
 @endsection

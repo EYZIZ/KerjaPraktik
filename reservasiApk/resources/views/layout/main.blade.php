@@ -168,7 +168,7 @@
 
                                     @if(auth()->check() && auth()->user()->role === 'admin')
                                         <li class="nav-item">
-                                            <a href="#">Laporan</a>
+                                            <a href="{{ url('laporan') }}">Laporan</a>
                                         </li>
                                     @endif
 

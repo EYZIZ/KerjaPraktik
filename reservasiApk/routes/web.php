@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CoachController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\DashboardController;
@@ -111,6 +112,15 @@ Route::middleware(['auth'])->group(function () {
 
     // cancel
     Route::delete('/reservasi/{reservasi}', [ReservasiController::class, 'destroy'])->name('reservasi.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Laporan (Hanya untuk admin yang login)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth','role:admin'])->group(function () {
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
 });
 
 
