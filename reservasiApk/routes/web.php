@@ -85,24 +85,34 @@ Route::middleware(['auth','role:admin'])->group(function () {
 | RESERVASI (Hanya untuk user yang login)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reservasi', [ReservasiController::class, 'index'])->name('reservasi.index');
+    Route::get('/reservasi/create', [ReservasiController::class, 'create'])->name('reservasi.create');
+    Route::post('/reservasi', [ReservasiController::class, 'store'])->name('reservasi.store');
 
-    // List reservasi
-    Route::get('/reservasi', [ReservasiController::class, 'index'])
-        ->name('reservasi.index');
+    // halaman pembayaran (pilih QRIS/BRIVA)
+    Route::get('/reservasi/{reservasi}/pay', [ReservasiController::class, 'pay'])
+        ->name('reservasi.pay');
 
-    // Form buat reservasi
-    Route::get('/reservasi/create', [ReservasiController::class, 'create'])
-        ->name('reservasi.create');
+    // buat instruksi pembayaran dummy sesuai channel
+    Route::post('/reservasi/{reservasi}/pay', [ReservasiController::class, 'createPaymentDummy'])
+        ->name('reservasi.pay.create');
 
-    // Simpan reservasi + generate SNAP TOKEN
-    Route::post('/reservasi', [ReservasiController::class, 'store'])
-        ->name('reservasi.store');
+    // halaman instruksi QRIS/BRIVA
+    Route::get('/reservasi/{reservasi}/qris', [ReservasiController::class, 'qris'])
+        ->name('reservasi.qris');
 
-    // Batalkan reservasi (kalau unpaid)
-    Route::delete('/reservasi/{reservasi}', [ReservasiController::class, 'destroy'])
-        ->name('reservasi.destroy');
+    Route::get('/reservasi/{reservasi}/briva', [ReservasiController::class, 'briva'])
+        ->name('reservasi.briva');
+
+    // simulasi dibayar (testing)
+    Route::post('/reservasi/{reservasi}/simulate-paid', [ReservasiController::class, 'simulatePaid'])
+        ->name('reservasi.simulatePaid');
+
+    // cancel
+    Route::delete('/reservasi/{reservasi}', [ReservasiController::class, 'destroy'])->name('reservasi.destroy');
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -112,8 +122,8 @@ Route::middleware('auth')->group(function () {
 | Pastikan kamu daftarkan URL ini di dashboard Midtrans.
 |--------------------------------------------------------------------------
 */
-Route::post('/payment/midtrans/callback', [ReservasiController::class, 'callback'])
-    ->name('payment.midtrans.callback');
+// Route::post('/payment/midtrans/callback', [ReservasiController::class, 'callback'])
+//     ->name('payment.midtrans.callback');
 
 
 Route::get('/kontak', function () {

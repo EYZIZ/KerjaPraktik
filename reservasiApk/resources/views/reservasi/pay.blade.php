@@ -175,10 +175,10 @@
                     </div>
                 </div>
 
-                {{-- BATAS PEMBAYARAN --}}
+                {{-- BATAS PEMBAYARAN (tetap tampil sebagai tanggal, countdown ada di halaman QRIS/BRIVA) --}}
                 @php
                     $deadline = \Carbon\Carbon::parse($reservasi->created_at)
-                                ->addMinutes(30)
+                                ->addMinutes(15)
                                 ->translatedFormat('d M Y H:i:s');
                 @endphp
                 <p class="text-center mb-3" style="color:#d32f2f;font-weight:600;">
@@ -204,6 +204,14 @@
                         </button>
                     </form>
 
+                    {{-- FORM HIDDEN untuk submit metode pembayaran (tanpa mengubah UI) --}}
+                    <form id="paymentCreateForm"
+                          action="{{ route('reservasi.pay.create', $reservasi->id) }}"
+                          method="POST" class="d-none">
+                        @csrf
+                        <input type="hidden" name="channel" id="channel_submit" value="QRIS_BRI">
+                    </form>
+
                     <button id="pay-button"
                             class="btn w-100 fw-bold"
                             style="background:#00805C;color:#fff;">
@@ -215,9 +223,9 @@
                     Setelah pembayaran berhasil, status reservasi akan otomatis diperbarui.
                 </small>
 
-                {{-- hidden jika mau diproses di server --}}
-                <input type="hidden" id="payment_channel_input" name="payment_channel" value="QRIS">
-                <input type="hidden" id="payment_fee_input" name="payment_fee" value="0">
+                {{-- hidden state UI --}}
+                <input type="hidden" id="payment_channel_input" value="QRIS_BRI">
+                <input type="hidden" id="payment_fee_input" value="0">
             </div>
         </div>
     </div>
@@ -233,61 +241,19 @@
             </button>
         </div>
 
-        {{-- LIST METODE --}}
+        {{-- LIST METODE (HANYA QRIS & BRIVA) --}}
         <div class="payment-option-row">
             <button class="payment-option"
-                    data-code="CIMB_VA" data-label="CIMB NIAGA VA" data-fee="3000">
-                <span>CIMB NIAGA VA</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="BNI_VA" data-label="BNI VA" data-fee="3000">
-                <span>BNI VA</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="MANDIRI_VA" data-label="MANDIRI VA H2H" data-fee="3000">
-                <span>MANDIRI VA H2H</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="BRI_VA" data-label="BRI VA" data-fee="3000">
-                <span>BRI VA</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="BCA_VA" data-label="BCA VA H2H" data-fee="3000">
-                <span>BCA VA H2H</span>
+                    data-code="QRIS_BRI" data-label="QRIS" data-fee="0">
+                <span>QRIS</span>
                 <span class="payment-radio"></span>
             </button>
         </div>
 
         <div class="payment-option-row">
             <button class="payment-option"
-                    data-code="QRIS" data-label="QRIS" data-fee="0">
-                <span>QRIS</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="OVO" data-label="OVO" data-fee="0">
-                <span>OVO</span>
-                <span class="payment-radio"></span>
-            </button>
-        </div>
-        <div class="payment-option-row">
-            <button class="payment-option"
-                    data-code="SHOPEEPAY" data-label="SHOPEEPAY APP" data-fee="0">
-                <span>SHOPEEPAY APP</span>
+                    data-code="BRIVA" data-label="BRIVA" data-fee="0">
+                <span>BRIVA</span>
                 <span class="payment-radio"></span>
             </button>
         </div>
@@ -295,24 +261,22 @@
 </div>
 @endsection
 
-{{-- Snap JS Midtrans (SANDBOX) --}}
-<script type="text/javascript"
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key="{{ config('midtrans.client_key') }}">
-</script>
-
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
     const baseAmount   = {{ $reservasi->total_harga }};
     const feeEl        = document.getElementById('fee_amount');
     const totalOnline  = document.getElementById('total_online');
     const selectedLbl  = document.getElementById('selected_method_label');
+
     const hiddenCode   = document.getElementById('payment_channel_input');
     const hiddenFee    = document.getElementById('payment_fee_input');
 
     const overlay      = document.getElementById('paymentOverlay');
     const btnOpen      = document.getElementById('btn-open-payment');
     const btnClose     = document.getElementById('btn-close-payment');
+
+    const submitForm   = document.getElementById('paymentCreateForm');
+    const submitChan   = document.getElementById('channel_submit');
 
     function formatNumber(num) {
         return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(num);
@@ -335,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // default: QRIS
-    setMethod('QRIS', 'QRIS', 0, null);
+    setMethod('QRIS_BRI', 'QRIS', 0, null);
 
     btnOpen.addEventListener('click', () => {
         overlay.classList.remove('d-none');
@@ -363,30 +327,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Proses Bayar: submit ke ReservasiController::createPaymentDummy()
     const payButton = document.getElementById('pay-button');
     payButton.addEventListener('click', function () {
-        if (typeof window.snap === 'undefined') {
-            alert('Snap JS belum ter-load. Cek client key atau URL Snap.');
-            return;
-        }
+        const code = hiddenCode.value; // QRIS_BRI / BRIVA
 
-        window.snap.pay('{{ $snapToken }}', {
-            onSuccess: function (result) {
-                console.log('success', result);
-                window.location.href = "{{ route('reservasi.index') }}";
-            },
-            onPending: function (result) {
-                console.log('pending', result);
-                window.location.href = "{{ route('reservasi.index') }}";
-            },
-            onError: function (result) {
-                console.log('error', result);
-                alert('Terjadi kesalahan saat proses pembayaran.');
-            },
-            onClose: function () {
-                alert('Anda menutup popup tanpa menyelesaikan pembayaran.');
-            }
-        });
+        // kirim channel ke server (update DB + redirect ke halaman instruksi)
+        submitChan.value = code;
+        submitForm.submit();
     });
 });
 </script>
