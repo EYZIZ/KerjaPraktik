@@ -67,7 +67,7 @@
                                     Ingat saya
                                 </label>
                             </div>
-                            <a href="#" class="small text-decoration-none">
+                            <a href="{{ route('password.otp.request') }}" class="small text-decoration-none">
                                 Lupa password?
                             </a>
                         </div>

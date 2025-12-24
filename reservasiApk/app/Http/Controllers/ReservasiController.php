@@ -16,15 +16,44 @@ class ReservasiController extends Controller
     /**
      * Daftar reservasi milik user login.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $reservasis = Reservasi::with(['lapangan', 'coach'])
-            ->where('user_id', Auth::id())
-            ->orderByDesc('tanggal')
-            ->orderByDesc('jam_mulai')
-            ->get();
+        $user = Auth::user();
 
-        return view('reservasi.index', compact('reservasis'));
+        $q = Reservasi::query()
+            ->with(['user', 'lapangan'])
+            ->latest();
+
+        // ===== RULE AKSES =====
+        if ($user->role === 'admin') {
+            $q->where('payment_status', 'paid');
+        } else {
+            $q->where('user_id', $user->id);
+        }
+
+        // ===== FILTER =====
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $q->whereHas('user', function ($u) use ($search) {
+                $u->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%");
+            });
+        }
+
+        if ($request->filled('from')) {
+            $q->whereDate('tanggal', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $q->whereDate('tanggal', '<=', $request->to);
+        }
+
+        $reservasis = $q->paginate(10)->withQueryString();
+        $showAksi = $reservasis->contains(function ($r) {
+            return $r->payment_status !== 'paid';
+        });
+
+        return view('reservasi.index', compact('reservasis','showAksi'));
     }
 
     /**

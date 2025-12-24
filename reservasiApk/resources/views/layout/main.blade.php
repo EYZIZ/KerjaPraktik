@@ -178,6 +178,25 @@
                                     </li>
                                     @endguest
 
+                                    @auth
+                                        <li class="nav-item dropdown d-lg-none">
+                                            <a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" style="font-weight:600;">
+                                                {{ Auth::user()->name }}
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">Akun</a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="POST" action="{{ route('logout') }}">
+                                                        @csrf
+                                                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        @endauth
                                 </ul>
                             </div>
 
@@ -191,6 +210,10 @@
 
                                     <ul class="dropdown-menu">
                                         <li>
+                                            <a class="dropdown-item" href="{{ route('profile.edit') }}">Akun</a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
                                             <form method="POST" action="{{ route('logout') }}">
                                                 @csrf
                                                 <button type="submit" class="dropdown-item text-danger">
@@ -202,9 +225,7 @@
                                 </div>
                                 @endauth
                             </div>
-
                         </nav>
-
                     </div>
                 </div>
             </div>

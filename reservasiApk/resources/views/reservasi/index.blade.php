@@ -17,6 +17,36 @@
         <div class="alert alert-danger mb-3">{{ session('error') }}</div>
     @endif
 
+    {{--  Filter  --}}
+    <form method="GET" action="{{ route('reservasi.index') }}" class="mb-3">
+        <div class="row g-2">
+
+            <div class="col-md-3">
+                <input type="text" name="q"
+                class="form-control"
+                placeholder="Cari nama / email"
+                value="{{ request('q') }}">
+            </div>
+
+            <div class="col-md-2">
+                <input type="date" name="from"
+                class="form-control"
+                value="{{ request('from') }}">
+            </div>
+
+            <div class="col-md-2">
+                <input type="date" name="to"
+                class="form-control"
+                value="{{ request('to') }}">
+            </div>
+
+            <div class="col-md-1 d-flex gap-1">
+                <button class="btn btn-primary w-100">Filter</button>
+                <a href="{{ route('reservasi.index') }}" class="btn btn-secondary w-100">Reset</a>
+            </div>
+        </div>
+    </form>
+
     <div class="card shadow-lg border-0" style="border-radius: 18px;">
         <div class="card-body p-4">
 
@@ -27,7 +57,8 @@
                     <table class="table align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>#</th>
+                                <th>No</th>
+                                <th>Nama</th>
                                 <th>Lapangan</th>
                                 <th>Tanggal</th>
                                 <th>Jam</th>
@@ -35,7 +66,9 @@
                                 <th>Total</th>
                                 <th>Status Reservasi</th>
                                 <th>Status Pembayaran</th>
-                                <th style="width: 130px;">Aksi</th>
+                                @if($showAksi)
+                                    <th style="width: 130px;">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -44,11 +77,13 @@
                                     <td>{{ $index + 1 }}</td>
 
                                     <td>
-                                        {{ optional($reservasi->lapangan)->location ?? 'Lapangan' }}
+                                        {{ optional($reservasi->user)->name ?? '-' }}
                                         <br>
-                                        <small class="text-muted">
-                                            ID: <code>{{ $reservasi->id }}</code>
-                                        </small>
+                                        <small class="text-muted">{{ optional($reservasi->user)->email ?? '' }}</small>
+                                    </td>
+
+                                    <td>
+                                        {{ optional($reservasi->lapangan)->location ?? 'Lapangan' }}
                                     </td>
 
                                     <td>{{ \Carbon\Carbon::parse($reservasi->tanggal)->format('d-m-Y') }}</td>

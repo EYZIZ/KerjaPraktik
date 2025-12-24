@@ -7,6 +7,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReservasiController;
+use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordOtpController;
 
 Route::get('/', [DashboardController::class, 'index']);
 
@@ -17,7 +19,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password.update');
 });
 
 
@@ -62,11 +65,9 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth','role:admin'])->group(function () {
 
-    // Form buat reservasi
     Route::get('/coach/create', [CoachController::class, 'create'])
         ->name('coach.create');
 
-    // Simpan reservasi + generate SNAP TOKEN
     Route::post('/coach', [CoachController::class, 'store'])
         ->name('coach.store');
 
@@ -76,7 +77,6 @@ Route::middleware(['auth','role:admin'])->group(function () {
     Route::put('/coach/{coach}', [CoachController::class, 'update'])
         ->name('coach.update');
 
-    // Batalkan reservasi (kalau unpaid)
     Route::delete('/coach/{coach}', [CoachController::class, 'destroy'])
         ->name('coach.destroy');
 });
@@ -91,26 +91,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reservasi/create', [ReservasiController::class, 'create'])->name('reservasi.create');
     Route::post('/reservasi', [ReservasiController::class, 'store'])->name('reservasi.store');
 
-    // halaman pembayaran (pilih QRIS/BRIVA)
     Route::get('/reservasi/{reservasi}/pay', [ReservasiController::class, 'pay'])
         ->name('reservasi.pay');
 
-    // buat instruksi pembayaran dummy sesuai channel
     Route::post('/reservasi/{reservasi}/pay', [ReservasiController::class, 'createPaymentDummy'])
         ->name('reservasi.pay.create');
 
-    // halaman instruksi QRIS/BRIVA
     Route::get('/reservasi/{reservasi}/qris', [ReservasiController::class, 'qris'])
         ->name('reservasi.qris');
 
     Route::get('/reservasi/{reservasi}/briva', [ReservasiController::class, 'briva'])
         ->name('reservasi.briva');
 
-    // simulasi dibayar (testing)
     Route::post('/reservasi/{reservasi}/simulate-paid', [ReservasiController::class, 'simulatePaid'])
         ->name('reservasi.simulatePaid');
 
-    // cancel
     Route::delete('/reservasi/{reservasi}', [ReservasiController::class, 'destroy'])->name('reservasi.destroy');
 });
 
@@ -124,20 +119,24 @@ Route::middleware(['auth','role:admin'])->group(function () {
 });
 
 
-/*
-|--------------------------------------------------------------------------
-| MIDTRANS PAYMENT CALLBACK (TANPA AUTH)
-|--------------------------------------------------------------------------
-| Route ini wajib diizinkan Midtrans untuk mengirim notif.
-| Pastikan kamu daftarkan URL ini di dashboard Midtrans.
-|--------------------------------------------------------------------------
-*/
-// Route::post('/payment/midtrans/callback', [ReservasiController::class, 'callback'])
-//     ->name('payment.midtrans.callback');
-
-
 Route::get('/kontak', function () {
     return view('kontak');
 })->name('kontak');
+
+Route::get('/forgot-password-otp', [ForgotPasswordOtpController::class, 'showRequestForm'])
+    ->name('password.otp.request');
+
+Route::post('/forgot-password-otp', [ForgotPasswordOtpController::class, 'sendOtp'])
+    ->name('password.otp.send');
+
+Route::get('/forgot-password-otp/verify', [ForgotPasswordOtpController::class, 'showOtpForm'])
+    ->name('password.otp.form');
+
+Route::post('/forgot-password-otp/reset', [ForgotPasswordOtpController::class, 'verifyOtpAndReset'])
+    ->name('password.otp.reset');
+
+Route::post('/forgot-password-otp/resend', [ForgotPasswordOtpController::class, 'resend'])
+    ->name('password.otp.resend');
+
 
 require __DIR__.'/auth.php';
